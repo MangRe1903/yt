@@ -135,6 +135,24 @@
   .row-thumb{width:76px;height:43px;border-radius:6px;border:1px solid var(--border);object-fit:cover;background:#000;flex-shrink:0;}
   .pin-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);color:#fcd34d;text-decoration:none;}
   .pin-btn:hover{background:rgba(245,158,11,.3);}
+
+  .studio-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .studio-tabs{display:flex;gap:18px;font-size:13px;font-weight:600;margin-top:8px;}
+  .studio-tab.active{color:#fff;border-bottom:2px solid #fff;padding-bottom:6px;}
+  .studio-row{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .studio-preview-box{width:260px;height:146px;border-radius:12px;background:#181818;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0;}
+  .studio-tv{width:206px;height:112px;background:#0b0b0b;border:5px solid #e5e5e5;border-radius:6px;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.6);}
+  .studio-tv img{width:100%;height:100%;object-fit:cover;display:block;}
+  .studio-laptop{position:absolute;bottom:6px;left:18px;width:118px;height:66px;background:#111;border:3px solid #f5f5f5;border-radius:4px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.7);}
+  .studio-laptop img{width:100%;height:100%;object-fit:cover;display:block;}
+  .studio-phone{position:absolute;bottom:6px;right:24px;width:34px;height:58px;background:#111;border:2px solid #f5f5f5;border-radius:5px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.7);}
+  .studio-phone img{width:100%;height:100%;object-fit:cover;display:block;}
+  .studio-avatar-circle{width:110px;height:110px;border-radius:999px;object-fit:cover;border:2px solid var(--border);background:#0f0f0f;}
+  .studio-pill-btn{background:#2c2c2c;color:#f1f1f1;border:1px solid #3f3f3f;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+  .studio-pill-btn:hover:not(:disabled){background:#3a3a3a;}
+  .studio-pill-btn.publish{background:#fff;color:#0f0f0f;border-color:#fff;}
+  .studio-pill-btn.publish:hover:not(:disabled){background:#e5e5e5;}
+  .saved-banner-bar{display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);margin-bottom:14px;}
 </style>
 </head>
 <body>
@@ -166,6 +184,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn-white" id="modeVideoBtn" style="flex:1;min-width:120px;">Upload Video</button>
           <button class="btn-ghost" id="modeLiveBtn" style="flex:1;min-width:120px;">Jadwal Live</button>
+          <button class="btn-ghost" id="modeBannerBtn" style="flex:1;min-width:140px;color:#fcd34d;">&#127912; Banner / Profile</button>
           <button class="btn-ghost" id="modePlaylistBtn" style="flex:1;min-width:110px;">Playlist</button>
           <button class="btn-ghost" id="modePinChatBtn" style="flex:1;min-width:130px;">&#128204; Pin Chat (3x)</button>
           <button class="btn-ghost" id="modeDeleteBtn" style="flex:1;min-width:130px;color:#fca5a5;">&#128465; Hapus Event</button>
@@ -330,6 +349,19 @@
       <span class="tag-pill" id="imgModePill">Mode: desain otomatis</span>
     </div>
     <div class="sec-body">
+      <div class="saved-banner-bar" id="savedThumbStatusBar">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <img id="savedThumbBarImg" class="row-thumb" style="display:none;" alt="Saved Banner">
+          <div style="font-size:12px;line-height:1.45;">
+            <b style="color:#86efac;">&#10003; Mode Banner Tersimpan Aktif (Tanpa Upload Gambar Lagi)</b><br>
+            <span style="color:var(--muted);" id="savedThumbBarText">Saat upload jadwal, gambar &amp; thumbnails.set otomatis dilewati (langsung memakai Banner Channel).</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-ghost" id="openBannerTabBtn" style="padding:7px 12px;font-size:11.5px;">&#127912; Ganti Banner</button>
+          <button class="btn-ghost" id="disableBannerOnlyBtn" style="padding:7px 12px;font-size:11.5px;color:#fcd34d;">Pakai Thumbnail Manual</button>
+        </div>
+      </div>
       <div class="note-box" style="margin-bottom:14px;">
         <b>Mode Video:</b> tiap event di-render jadi <b>video WebM 5 detik</b> dari gambar (1280&times;720); thumbnail otomatis diambil YouTube dari frame video.<br>
         <b>Mode Jadwal Live:</b> gambar yang dipilih dipakai sebagai <b>thumbnail JPEG</b> (dijaga &lt; 2 MB) lewat <code class="inline">thumbnails.set</code>; tidak ada video yang dirender.<br>
@@ -795,6 +827,131 @@
   </div>
   <!-- /deleteWrap -->
 
+  <!-- SECTION CHANNEL CUSTOMIZATION (mode Banner / Profile) -->
+  <div id="bannerStudioWrap" style="display:none;">
+  <section>
+    <div class="sec-head">
+      <div class="sec-head-left"><div class="num-badge">&#127912;</div><h2>Channel customization</h2></div>
+      <span class="tag-pill" id="custSavedPill">Belum disave</span>
+    </div>
+    <div class="sec-body">
+      <div class="studio-header">
+        <div>
+          <div style="font-size:17px;font-weight:700;">Channel customization</div>
+          <div class="studio-tabs"><span class="studio-tab active">Profile</span></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <a id="custViewChannelLink" class="studio-pill-btn" href="https://www.youtube.com/" target="_blank" rel="noopener">View channel &#8599;</a>
+          <button class="studio-pill-btn" id="custCancelBtn">Cancel</button>
+          <button class="studio-pill-btn publish" id="custPublishSaveBtn">&#128190; Publish &amp; Save</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;">
+        <div style="flex:1;min-width:220px;">
+          <label for="custAccountSelect">Target Brand Account / Channel</label>
+          <select id="custAccountSelect"></select>
+        </div>
+        <button class="btn-ghost" id="custRefreshBtn" style="padding:11px 14px;font-size:12px;">&#8635; Muat dari YouTube</button>
+      </div>
+
+      <!-- Banner image -->
+      <div class="studio-row">
+        <div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Banner image</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;max-width:260px;">Tampil di atas channel &amp; otomatis dipakai sebagai thumbnail jadwal live tanpa <code class="inline">thumbnails.set</code>.</div>
+          <div class="studio-preview-box">
+            <div class="studio-tv"><img id="custBannerTvImg" alt="" style="display:none;"></div>
+            <div class="studio-laptop"><img id="custBannerLaptopImg" alt="" style="display:none;"></div>
+            <div class="studio-phone"><img id="custBannerPhoneImg" alt="" style="display:none;"></div>
+            <span id="custBannerEmptyText" style="position:absolute;font-size:11px;color:var(--muted);">Belum ada banner</span>
+          </div>
+          <div id="custBannerMeta" style="font-size:11px;color:var(--muted);margin-top:6px;"></div>
+        </div>
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
+            For the best results on all devices, use an image that's at least <b>2048 &times; 1152 pixels</b> and <b>6MB or less</b>.<br>
+            Gambar yang dipilih otomatis di-resize ke <b>2048&times;1152 JPEG (&le; 6 MB)</b> dan langsung dikirim via YouTube Data API v3.
+          </div>
+          <div style="margin-bottom:12px;max-width:290px;">
+            <label for="custBannerFitSelect">Mode Potong Banner</label>
+            <select id="custBannerFitSelect">
+              <option value="cover" selected>Penuh 16:9 (Cover 2048&times;1152)</option>
+              <option value="contain">Utuh + Latar Blur (Contain)</option>
+              <option value="safe">Safe Area TV/Desktop/HP (1546&times;423)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="studio-pill-btn" id="custChangeBannerBtn">Change</button>
+            <button class="studio-pill-btn" id="custRemoveBannerBtn" style="color:#fca5a5;">Remove</button>
+            <button class="studio-pill-btn" id="custSaveLocalOnlyBtn" style="color:#86efac;">&#128190; Save Lokal Saja</button>
+            <input type="file" id="custBannerFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Picture -->
+      <div class="studio-row">
+        <div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Picture</div>
+          <div class="studio-preview-box">
+            <img id="custPictureImg" class="studio-avatar-circle" alt="" style="display:none;">
+            <span id="custPictureEmpty" style="font-size:11px;color:var(--muted);">Avatar Channel</span>
+          </div>
+        </div>
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
+            Your profile picture will appear where your channel is presented on YouTube, like next to your videos and comments. Use a PNG or static GIF that's at least 98 &times; 98 pixels and 4 MB or less.<br>
+            <span style="color:#fcd34d;">Info API:</span> YouTube Data API v3 belum menyediakan endpoint publik untuk mengubah foto profil channel, gunakan tombol di bawah untuk membuka halaman profil Studio channel ini.
+          </div>
+          <a id="custPictureStudioLink" class="studio-pill-btn" href="https://studio.youtube.com/" target="_blank" rel="noopener">Change di Studio &#8599;</a>
+        </div>
+      </div>
+
+      <!-- Pengaturan Save Otomatis -->
+      <div style="padding:14px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:#86efac;margin-bottom:8px;">&#128190; Save Pengaturan Default Thumbnail (Tidak Perlu Masukin Gambar Lagi)</div>
+        <label class="checkbox-lbl" style="margin-bottom:8px;">
+          <input type="checkbox" id="custLockBannerModeChk" checked>
+          <b>Kunci Mode Banner Channel</b> &mdash; saat upload CSV/Excel jadwal (walau browser di-refresh), otomatis lewati <code class="inline">thumbnails.set</code> &amp; kolom Thumbnail sehingga langsung pakai Banner Channel (bebas limit 429 &amp; hemat 50 unit/event).
+        </label>
+        <label class="checkbox-lbl">
+          <input type="checkbox" id="custPersistLocalChk" checked>
+          <b>Simpan gambar permanen di browser (IndexedDB)</b> &mdash; gambar juga otomatis dipulihkan &amp; siap dipakai di Mode Upload Video 5 detik tanpa pilih file ulang.
+        </label>
+      </div>
+
+      <!-- Info Channel (Name, Handle, Description, URL) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px;">
+        <div><label>Name</label><input type="text" id="custNameDisplay" readonly placeholder="-"></div>
+        <div><label>Handle</label><input type="text" id="custHandleDisplay" readonly placeholder="-"></div>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="custDescDisplay" rows="3" readonly placeholder="Deskripsi channel akan muncul setelah klik Muat dari YouTube..."></textarea>
+      </div>
+      <div class="field">
+        <label>Channel URL</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="custUrlDisplay" readonly placeholder="https://www.youtube.com/channel/...">
+          <button class="btn-ghost" id="custCopyUrlBtn" style="flex-shrink:0;">Salin</button>
+        </div>
+      </div>
+
+      <div class="log-box" style="margin-top:14px;">
+        <div class="log-head">
+          <span>Log Output Channel Customization</span>
+          <span style="display:flex;gap:14px;">
+            <button class="clear-btn" id="clearLogBtn5">Clear</button>
+          </span>
+        </div>
+        <div class="log-body" id="logBody5"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+  <!-- /bannerStudioWrap -->
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -928,7 +1085,7 @@
     return mode === "live" ? Math.floor(COST.DAILY_UNITS / LIVE_EVENT_COST) : COST.VIDEO_BUCKET;   // 66 vs 100
   }
   var LS_MODE = "yt_csv_mode";
-  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return (m === "live" || m === "playlist" || m === "pinchat" || m === "delete") ? m : "video"; } catch (e){ return "video"; } })();
+  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return (m === "live" || m === "banner" || m === "playlist" || m === "pinchat" || m === "delete") ? m : "video"; } catch (e){ return "video"; } })();
   // Default "Limit/akun" mengikuti kuota harian per Client ID sesuai mode: 66 (live) / 100 (video).
   // saveState/restoreState di bawah bisa menimpa ini kalau ada sesi tersimpan (dan mematikan limitAutoManaged).
   limitPerAccount = eventsPerDayPerClient(appMode);
@@ -953,6 +1110,7 @@
     reloginAllBtn: document.getElementById("reloginAllBtn"),
     modeVideoBtn: document.getElementById("modeVideoBtn"),
     modeLiveBtn: document.getElementById("modeLiveBtn"),
+    modeBannerBtn: document.getElementById("modeBannerBtn"),
     modePlaylistBtn: document.getElementById("modePlaylistBtn"),
     modePinChatBtn: document.getElementById("modePinChatBtn"),
     modeDeleteBtn: document.getElementById("modeDeleteBtn"),
@@ -960,6 +1118,40 @@
     playlistWrap: document.getElementById("playlistWrap"),
     pinChatWrap: document.getElementById("pinChatWrap"),
     deleteWrap: document.getElementById("deleteWrap"),
+    bannerStudioWrap: document.getElementById("bannerStudioWrap"),
+    savedThumbStatusBar: document.getElementById("savedThumbStatusBar"),
+    savedThumbBarImg: document.getElementById("savedThumbBarImg"),
+    savedThumbBarText: document.getElementById("savedThumbBarText"),
+    openBannerTabBtn: document.getElementById("openBannerTabBtn"),
+    disableBannerOnlyBtn: document.getElementById("disableBannerOnlyBtn"),
+    custSavedPill: document.getElementById("custSavedPill"),
+    custViewChannelLink: document.getElementById("custViewChannelLink"),
+    custCancelBtn: document.getElementById("custCancelBtn"),
+    custPublishSaveBtn: document.getElementById("custPublishSaveBtn"),
+    custAccountSelect: document.getElementById("custAccountSelect"),
+    custRefreshBtn: document.getElementById("custRefreshBtn"),
+    custBannerTvImg: document.getElementById("custBannerTvImg"),
+    custBannerLaptopImg: document.getElementById("custBannerLaptopImg"),
+    custBannerPhoneImg: document.getElementById("custBannerPhoneImg"),
+    custBannerEmptyText: document.getElementById("custBannerEmptyText"),
+    custBannerMeta: document.getElementById("custBannerMeta"),
+    custBannerFitSelect: document.getElementById("custBannerFitSelect"),
+    custChangeBannerBtn: document.getElementById("custChangeBannerBtn"),
+    custRemoveBannerBtn: document.getElementById("custRemoveBannerBtn"),
+    custSaveLocalOnlyBtn: document.getElementById("custSaveLocalOnlyBtn"),
+    custBannerFileInput: document.getElementById("custBannerFileInput"),
+    custPictureImg: document.getElementById("custPictureImg"),
+    custPictureEmpty: document.getElementById("custPictureEmpty"),
+    custPictureStudioLink: document.getElementById("custPictureStudioLink"),
+    custLockBannerModeChk: document.getElementById("custLockBannerModeChk"),
+    custPersistLocalChk: document.getElementById("custPersistLocalChk"),
+    custNameDisplay: document.getElementById("custNameDisplay"),
+    custHandleDisplay: document.getElementById("custHandleDisplay"),
+    custDescDisplay: document.getElementById("custDescDisplay"),
+    custUrlDisplay: document.getElementById("custUrlDisplay"),
+    custCopyUrlBtn: document.getElementById("custCopyUrlBtn"),
+    logBody5: document.getElementById("logBody5"),
+    clearLogBtn5: document.getElementById("clearLogBtn5"),
     delCountPill: document.getElementById("delCountPill"),
     delAccountSelect: document.getElementById("delAccountSelect"),
     delFilterSelect: document.getElementById("delFilterSelect"),
@@ -1153,18 +1345,28 @@
   // ================= MODE (video / live) =================
   function applyModeUi(){
     var live = appMode === "live";
+    var bannermode = appMode === "banner";
     var playlist = appMode === "playlist";
     var pinchat = appMode === "pinchat";
     var delmode = appMode === "delete";
-    el.modeVideoBtn.className = (!live && !playlist && !pinchat && !delmode) ? "btn-white" : "btn-ghost";
+    el.modeVideoBtn.className = (!live && !bannermode && !playlist && !pinchat && !delmode) ? "btn-white" : "btn-ghost";
     el.modeLiveBtn.className = live ? "btn-white" : "btn-ghost";
+    if (el.modeBannerBtn) el.modeBannerBtn.className = bannermode ? "btn-white" : "btn-ghost";
     el.modePlaylistBtn.className = playlist ? "btn-white" : "btn-ghost";
     if (el.modePinChatBtn) el.modePinChatBtn.className = pinchat ? "btn-white" : "btn-ghost";
     if (el.modeDeleteBtn) el.modeDeleteBtn.className = delmode ? "btn-primary" : "btn-ghost";
-    el.videoLiveWrap.style.display = (playlist || pinchat || delmode) ? "none" : "";
+    el.videoLiveWrap.style.display = (bannermode || playlist || pinchat || delmode) ? "none" : "";
+    if (el.bannerStudioWrap) el.bannerStudioWrap.style.display = bannermode ? "" : "none";
     el.playlistWrap.style.display = playlist ? "" : "none";
     if (el.pinChatWrap) el.pinChatWrap.style.display = pinchat ? "" : "none";
     if (el.deleteWrap) el.deleteWrap.style.display = delmode ? "" : "none";
+    if (bannermode){
+      renderBannerAccountSelect();
+      syncSavedThumbUi();
+      fetchChannelCustomizationProfile();
+      el.modeNote.innerHTML = '<b>Mode Channel Customization (Banner / Profile).</b> Ganti Banner Image channel (2048&times;1152 &le; 6 MB) langsung via YouTube API seperti halaman Profile YouTube Studio, lalu klik <b>Publish &amp; Save</b> supaya saat upload jadwal tidak perlu memasukkan gambar/thumbnail lagi.';
+      return;
+    }
     if (playlist){
       renderPlaylistAccountSelect();
       el.modeNote.innerHTML = '<b>Mode Playlist.</b> Bikin playlist baru di channel kamu lalu isi dengan video &mdash; video kamu sendiri atau video publik orang lain yang sejenis. ' +
@@ -1200,8 +1402,8 @@
     if (m === appMode) return;
     appMode = m;
     lsSetRaw(LS_MODE, m);
-    if (m === "playlist" || m === "pinchat" || m === "delete"){
-      var mLabel = m === "playlist" ? "Playlist" : (m === "pinchat" ? "Pin Chat (3x)" : "Hapus Event");
+    if (m === "banner" || m === "playlist" || m === "pinchat" || m === "delete"){
+      var mLabel = m === "banner" ? "Banner / Profile" : (m === "playlist" ? "Playlist" : (m === "pinchat" ? "Pin Chat (3x)" : "Hapus Event"));
       log("Mode diganti ke: " + mLabel + ".", "info");
       applyModeUi();
       updateGeneralUi();
@@ -2006,10 +2208,15 @@
     selectedIds = {};
     events.forEach(function(r){ selectedIds[r._id] = !r._invalid; }); // baris invalid tidak ikut terpilih otomatis
 
-    if (el.liveThumbChk && (parsed.some(function(r){ return !!r.thumbnail; }) || userImages.length > 0)){
-      el.liveThumbChk.checked = true;
+    if (el.liveThumbChk){
+      if (thumbPrefs.useBannerOnly){
+        el.liveThumbChk.checked = false;
+        log("ℹ Mode Banner Channel tersimpan aktif — kolom Thumbnail/gambar dilewati otomatis, jadwal langsung pakai Banner Channel.", "info");
+      } else if (parsed.some(function(r){ return !!r.thumbnail; }) || userImages.length > 0){
+        el.liveThumbChk.checked = true;
+      }
     }
-    preloadRemoteThumbnails(parsed);
+    if (!thumbPrefs.useBannerOnly) preloadRemoteThumbnails(parsed);
     renderWarnings(problems);
     renderPreviewTable();
     renderEventsTable();
@@ -3393,23 +3600,26 @@
 
   function getPreviewThumbSrcForRow(row){
     if (!row) return "";
+    if (thumbPrefs.useBannerOnly && customBannerImage && customBannerImage.url) return customBannerImage.url;
     if (row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
       var c = _remoteImgCache[row.thumbnail];
       if (c && c.url) return c.url;
       return normalizeRemoteImageUrl(row.thumbnail);
     }
     var local = findMatchedLocalEntry(row);
-    return local ? local.url : "";
+    if (local) return local.url;
+    return (customBannerImage && customBannerImage.url) ? customBannerImage.url : "";
   }
 
-  // Pilih gambar untuk baris tertentu: prioritas 1) URL remote yang sudah dimuat, 2) nama file cocok di Bagian 3, 3) round-robin Bagian 3, 4) null (desain otomatis).
+  // Pilih gambar untuk baris tertentu: prioritas 1) URL remote (kecuali terkunci Mode Banner), 2) nama file cocok/round-robin Bagian 3, 3) gambar Banner tersimpan, 4) desain otomatis.
   function pickImageForRow(row){
-    if (row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
+    if (!thumbPrefs.useBannerOnly && row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
       var c = _remoteImgCache[row.thumbnail];
       if (c && c.img) return c.img;
     }
     var local = findMatchedLocalEntry(row);
-    return local ? local.img : null;
+    if (local) return local.img;
+    return (customBannerImage && customBannerImage.img) ? customBannerImage.img : null;
   }
 
   // Gambar satu frame ke canvas: mode upload/URL atau desain otomatis dari judul.
@@ -3650,41 +3860,171 @@
     }
   }
 
-  // ================= BANNER IMAGE CHANNEL VIA API (2048x1152, <= 6 MB) =================
-  var customBannerImage = null;   // { img: HTMLImageElement, url: objectURL, name: string }
+  // ================= BANNER IMAGE CHANNEL & CHANNEL CUSTOMIZATION (2048x1152 + AUTO SAVE) =================
+  var customBannerImage = null;   // { img: HTMLImageElement, url: objectURL, name: string, blob?: Blob }
   var bannerBusy = false;
+  var LS_THUMB_PREFS = "yt_csv_thumb_prefs_v1";
+  var IDB_NAME = "yt_mangre_media_" + (STORAGE_PREFIX || "root").replace(/[^a-zA-Z0-9_-]/g, "_");
+  var thumbPrefs = (function(){
+    try {
+      var o = JSON.parse(localStorage.getItem(LS_THUMB_PREFS) || "{}");
+      return {
+        useBannerOnly: !!o.useBannerOnly,
+        bannerFitMode: o.bannerFitMode || "cover",
+        persistLocal: o.persistLocal !== false,
+        savedAt: o.savedAt || null,
+        savedName: o.savedName || ""
+      };
+    } catch (e){
+      return { useBannerOnly: false, bannerFitMode: "cover", persistLocal: true, savedAt: null, savedName: "" };
+    }
+  })();
+
+  function custLog(text, type){
+    type = type || "info";
+    log(text, type);
+    if (!el.logBody5) return;
+    var line = document.createElement("div");
+    line.className = "log-line " + type;
+    var t = document.createElement("span");
+    t.className = "t";
+    t.textContent = "[" + fmtTime(Date.now()) + "]";
+    var msg = document.createElement("span");
+    msg.textContent = text;
+    line.appendChild(t);
+    line.appendChild(msg);
+    el.logBody5.appendChild(line);
+    el.logBody5.scrollTop = el.logBody5.scrollHeight;
+  }
+
+  function saveThumbPrefs(){
+    lsSetRaw(LS_THUMB_PREFS, JSON.stringify(thumbPrefs));
+    syncSavedThumbUi();
+  }
+
+  function openMediaDb(cb){
+    if (!window.indexedDB){ cb(null); return; }
+    try {
+      var req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = function(e){
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains("media")) db.createObjectStore("media");
+      };
+      req.onsuccess = function(e){ cb(e.target.result); };
+      req.onerror = function(){ cb(null); };
+    } catch (e){ cb(null); }
+  }
+
+  function idbPutMedia(key, val, cb){
+    openMediaDb(function(db){
+      if (!db){ if (cb) cb(false); return; }
+      try {
+        var tx = db.transaction("media", "readwrite");
+        tx.objectStore("media").put(val, key);
+        tx.oncomplete = function(){ if (cb) cb(true); };
+        tx.onerror = function(){ if (cb) cb(false); };
+      } catch (e){ if (cb) cb(false); }
+    });
+  }
+
+  function idbGetMedia(key, cb){
+    openMediaDb(function(db){
+      if (!db){ cb(null); return; }
+      try {
+        var tx = db.transaction("media", "readonly");
+        var req = tx.objectStore("media").get(key);
+        req.onsuccess = function(){ cb(req.result || null); };
+        req.onerror = function(){ cb(null); };
+      } catch (e){ cb(null); }
+    });
+  }
+
+  function idbDeleteMedia(key){
+    openMediaDb(function(db){
+      if (!db) return;
+      try { db.transaction("media", "readwrite").objectStore("media").delete(key); } catch (e){}
+    });
+  }
+
+  function setStudioBannerPreviewSrc(url, metaText){
+    [el.custBannerTvImg, el.custBannerLaptopImg, el.custBannerPhoneImg].forEach(function(im){
+      if (!im) return;
+      if (url){ im.src = url; im.style.display = "block"; }
+      else { im.removeAttribute("src"); im.style.display = "none"; }
+    });
+    if (el.custBannerEmptyText) el.custBannerEmptyText.style.display = url ? "none" : "block";
+    if (el.custBannerMeta && metaText !== undefined) el.custBannerMeta.textContent = metaText;
+  }
+
+  function syncSavedThumbUi(){
+    if (el.liveThumbChk && thumbPrefs.useBannerOnly){
+      el.liveThumbChk.checked = false;
+    }
+    if (el.custLockBannerModeChk) el.custLockBannerModeChk.checked = thumbPrefs.savedAt ? !!thumbPrefs.useBannerOnly : true;
+    if (el.custPersistLocalChk) el.custPersistLocalChk.checked = thumbPrefs.persistLocal !== false;
+    if (el.custBannerFitSelect && thumbPrefs.bannerFitMode) el.custBannerFitSelect.value = thumbPrefs.bannerFitMode;
+
+    if (el.savedThumbStatusBar){
+      el.savedThumbStatusBar.style.display = thumbPrefs.useBannerOnly ? "flex" : "none";
+      if (el.savedThumbBarImg){
+        if (customBannerImage && customBannerImage.url){
+          el.savedThumbBarImg.src = customBannerImage.url;
+          el.savedThumbBarImg.style.display = "block";
+        } else {
+          el.savedThumbBarImg.style.display = "none";
+        }
+      }
+      if (el.savedThumbBarText){
+        var nm = thumbPrefs.savedName || (customBannerImage && customBannerImage.name) || "Banner Channel";
+        el.savedThumbBarText.textContent = "Tersimpan (" + nm + ") — saat upload jadwal, gambar & thumbnails.set otomatis dilewati (langsung pakai Banner Channel).";
+      }
+    }
+    if (el.custSavedPill){
+      el.custSavedPill.textContent = thumbPrefs.useBannerOnly
+        ? "✓ Tersimpan (Auto-Skip Thumbnail)"
+        : (thumbPrefs.savedAt ? "✓ Gambar Tersimpan Lokal" : "Belum disave");
+    }
+  }
 
   function renderBannerAccountSelect(){
-    if (!el.bannerAccountSelect) return;
-    var prev = el.bannerAccountSelect.value;
-    if (!accounts.length){
-      el.bannerAccountSelect.innerHTML = '<option value="">(belum ada akun / Brand Channel login)</option>';
-      updateStudioProfileHref();
-      return;
-    }
-    var opts = [];
-    if (accounts.length > 1){
-      opts.push('<option value="__ALL__">Semua Brand Account Aktif (' + accounts.length + ' channel)</option>');
-    }
-    accounts.forEach(function(a, i){
-      var tag = a.channelSuspended ? " [SUSPENDED]" : (isTokenExpired(a) ? " [Token habis]" : "");
-      var lbl = (a.channelTitle || a.email || ("Akun " + (i + 1))) + (a.channelId ? " (" + a.channelId + ")" : "") + tag;
-      opts.push('<option value="' + i + '">' + escapeHtml(lbl) + '</option>');
+    var selects = [el.bannerAccountSelect, el.custAccountSelect];
+    selects.forEach(function(sel){
+      if (!sel) return;
+      var prev = sel.value;
+      if (!accounts.length){
+        sel.innerHTML = '<option value="">(belum ada akun / Brand Channel login)</option>';
+        return;
+      }
+      var opts = [];
+      if (accounts.length > 1){
+        opts.push('<option value="__ALL__">Semua Brand Account Aktif (' + accounts.length + ' channel)</option>');
+      }
+      accounts.forEach(function(a, i){
+        var tag = a.channelSuspended ? " [SUSPENDED]" : (isTokenExpired(a) ? " [Token habis]" : "");
+        var lbl = (a.channelTitle || a.email || ("Akun " + (i + 1))) + (a.channelId ? " (" + a.channelId + ")" : "") + tag;
+        opts.push('<option value="' + i + '">' + escapeHtml(lbl) + '</option>');
+      });
+      sel.innerHTML = opts.join("");
+      if (prev && (prev === "__ALL__" || Number(prev) < accounts.length)) sel.value = prev;
     });
-    el.bannerAccountSelect.innerHTML = opts.join("");
-    if (prev && (prev === "__ALL__" || Number(prev) < accounts.length)) el.bannerAccountSelect.value = prev;
     updateStudioProfileHref();
   }
 
   function updateStudioProfileHref(){
-    if (!el.openStudioProfileLink || !el.bannerAccountSelect) return;
-    var v = el.bannerAccountSelect.value;
+    var v = (el.custAccountSelect && appMode === "banner")
+      ? el.custAccountSelect.value
+      : (el.bannerAccountSelect ? el.bannerAccountSelect.value : "");
     var acc = (v !== "" && v !== "__ALL__") ? accounts[Number(v)] : accounts[0];
-    if (acc && acc.channelId){
-      el.openStudioProfileLink.href = "https://studio.youtube.com/channel/" + encodeURIComponent(acc.channelId) + "/editing/profile";
-    } else {
-      el.openStudioProfileLink.href = "https://studio.youtube.com/";
-    }
+    var profileUrl = (acc && acc.channelId)
+      ? ("https://studio.youtube.com/channel/" + encodeURIComponent(acc.channelId) + "/editing/profile")
+      : "https://studio.youtube.com/";
+    var channelUrl = (acc && acc.channelId)
+      ? ("https://www.youtube.com/channel/" + encodeURIComponent(acc.channelId))
+      : "https://www.youtube.com/";
+
+    if (el.openStudioProfileLink) el.openStudioProfileLink.href = profileUrl;
+    if (el.custPictureStudioLink) el.custPictureStudioLink.href = profileUrl;
+    if (el.custViewChannelLink) el.custViewChannelLink.href = channelUrl;
   }
 
   function setCustomBannerFile(fileList){
@@ -3696,38 +4036,71 @@
     var url = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function(){
-      customBannerImage = { img: img, url: url, name: file.name };
-      if (el.bannerFileLabel) el.bannerFileLabel.textContent = "Dipilih: " + file.name + " (" + img.naturalWidth + "×" + img.naturalHeight + " → auto-resize 2048×1152)";
+      customBannerImage = { img: img, url: url, name: file.name, blob: file };
+      var meta = "Dipilih: " + file.name + " (" + img.naturalWidth + "×" + img.naturalHeight + " → auto-resize 2048×1152)";
+      if (el.bannerFileLabel) el.bannerFileLabel.textContent = meta;
       if (el.clearBannerImgBtn) el.clearBannerImgBtn.style.display = "inline-block";
       if (el.bannerPreviewImg) el.bannerPreviewImg.src = url;
       if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "flex";
       if (el.bannerStatusText) el.bannerStatusText.textContent = "Siap di-upload ke Banner Image Channel (2048×1152 JPEG ≤ 6 MB).";
+      setStudioBannerPreviewSrc(url, meta);
+      syncSavedThumbUi();
+      renderAssetPreview();
+      if (events.length) renderEventsTable();
+      custLog("Gambar banner dipilih: " + file.name + " (" + img.naturalWidth + "×" + img.naturalHeight + "). Klik 'Publish & Save' untuk menerapkan ke YouTube & menyimpan permanen.", "info");
     };
     img.onerror = function(){ URL.revokeObjectURL(url); showToast("Gambar banner tidak bisa dibaca"); };
     img.src = url;
   }
 
-  function clearCustomBannerFile(){
+  function clearCustomBannerFile(alsoForgetSaved){
     if (customBannerImage && customBannerImage.url) URL.revokeObjectURL(customBannerImage.url);
     customBannerImage = null;
     if (el.bannerFileInput) el.bannerFileInput.value = "";
+    if (el.custBannerFileInput) el.custBannerFileInput.value = "";
     if (el.bannerFileLabel) el.bannerFileLabel.textContent = "Default: pakai gambar #1 dari Bagian 3";
     if (el.clearBannerImgBtn) el.clearBannerImgBtn.style.display = "none";
     if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "none";
+    setStudioBannerPreviewSrc("", "Belum ada gambar banner dipilih");
+    if (alsoForgetSaved){
+      idbDeleteMedia("saved_banner");
+      thumbPrefs.savedAt = null;
+      thumbPrefs.savedName = "";
+      saveThumbPrefs();
+    }
+    renderAssetPreview();
+    if (events.length) renderEventsTable();
   }
 
   // Render gambar ke ukuran resmi YouTube Channel Banner: 2048x1152 (16:9), JPEG <= 6 MB
-  function renderBannerBlob2048(sourceImg, cb){
+  // Mendukung 3 mode potong: cover (penuh 16:9), contain (utuh + blur), safe (area aman 1546x423 + blur)
+  function renderBannerBlob2048(sourceImg, cb, fitMode){
     try {
       var W = 2048, H = 1152;
+      var mode = fitMode || (el.custBannerFitSelect && el.custBannerFitSelect.value) || thumbPrefs.bannerFitMode || "cover";
       var c = document.createElement("canvas");
       c.width = W; c.height = H;
       var ctx = c.getContext("2d");
-      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#0f0f0f"; ctx.fillRect(0, 0, W, H);
       var iw = sourceImg.naturalWidth, ih = sourceImg.naturalHeight;
-      var scale = Math.max(W / iw, H / ih);
-      var dw = iw * scale, dh = ih * scale;
-      ctx.drawImage(sourceImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+      if (mode === "contain" || mode === "safe"){
+        ctx.save();
+        try { ctx.filter = "blur(26px) brightness(0.42)"; } catch (e){}
+        var bgScale = Math.max(W / iw, H / ih);
+        ctx.drawImage(sourceImg, (W - iw * bgScale) / 2, (H - ih * bgScale) / 2, iw * bgScale, ih * bgScale);
+        ctx.restore();
+        var boxW = mode === "safe" ? 1546 : W;
+        var boxH = mode === "safe" ? 423 : H;
+        var fgScale = Math.min(boxW / iw, boxH / ih);
+        var dw = iw * fgScale, dh = ih * fgScale;
+        ctx.drawImage(sourceImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      } else {
+        var scale = Math.max(W / iw, H / ih);
+        var dw2 = iw * scale, dh2 = ih * scale;
+        ctx.drawImage(sourceImg, (W - dw2) / 2, (H - dh2) / 2, dw2, dh2);
+      }
+
       var qualities = [0.92, 0.85, 0.78, 0.68];
       var tryQ = function(i){
         c.toBlob(function(blob){
@@ -3742,14 +4115,73 @@
     } catch (e){ cb("Gagal menyiapkan gambar banner: " + (e.message || e)); }
   }
 
-  function resolveBannerTargets(){
+  function resolveBannerTargets(fromStudioTab){
     if (!accounts.length) return [];
-    var v = el.bannerAccountSelect ? el.bannerAccountSelect.value : "";
+    var sel = fromStudioTab ? el.custAccountSelect : el.bannerAccountSelect;
+    var v = sel ? sel.value : "";
     if (v === "__ALL__"){
       return accounts.filter(function(a){ return !isTokenExpired(a) && !a.channelSuspended; });
     }
     var acc = accounts[Number(v)];
     return acc ? [acc] : [];
+  }
+
+  async function fetchChannelCustomizationProfile(){
+    updateStudioProfileHref();
+    if (!el.custAccountSelect || !accounts.length){
+      if (el.custNameDisplay) el.custNameDisplay.value = "";
+      if (el.custHandleDisplay) el.custHandleDisplay.value = "";
+      if (el.custDescDisplay) el.custDescDisplay.value = "";
+      if (el.custUrlDisplay) el.custUrlDisplay.value = "";
+      return;
+    }
+    var v = el.custAccountSelect.value;
+    var acc = v === "__ALL__"
+      ? accounts.find(function(a){ return !isTokenExpired(a) && !a.channelSuspended; })
+      : accounts[Number(v)];
+    if (!acc) return;
+
+    // Tampilkan data dasar yang sudah tersedia secara lokal dulu
+    if (el.custNameDisplay) el.custNameDisplay.value = acc.channelTitle || "";
+    if (el.custUrlDisplay) el.custUrlDisplay.value = acc.channelId ? ("https://www.youtube.com/channel/" + acc.channelId) : "";
+    if (el.custPictureImg && (acc.channelThumb || acc.picture)){
+      el.custPictureImg.src = acc.channelThumb || acc.picture;
+      el.custPictureImg.style.display = "block";
+      if (el.custPictureEmpty) el.custPictureEmpty.style.display = "none";
+    }
+    if (isTokenExpired(acc) || acc.channelSuspended) return;
+
+    try {
+      var token = await ensureFreshToken(acc);
+      var res = await fetch("https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings&mine=true", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      addClientQuotaUsage(acc.clientId, "live", 1);
+      if (!res.ok) return;
+      var data = await res.json();
+      var ch = data.items && data.items[0];
+      if (!ch) return;
+
+      var pic = ch.snippet && ch.snippet.thumbnails && (ch.snippet.thumbnails.high || ch.snippet.thumbnails.medium || ch.snippet.thumbnails.default);
+      if (el.custPictureImg && pic && pic.url){
+        el.custPictureImg.src = pic.url;
+        el.custPictureImg.style.display = "block";
+        if (el.custPictureEmpty) el.custPictureEmpty.style.display = "none";
+      }
+      var liveBanner = ch.brandingSettings && ch.brandingSettings.image && ch.brandingSettings.image.bannerExternalUrl;
+      if (liveBanner && !customBannerImage){
+        setStudioBannerPreviewSrc(liveBanner + "=w1060-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj", "Banner live di YouTube (" + ((ch.snippet && ch.snippet.title) || "") + ")");
+      }
+      if (el.custNameDisplay) el.custNameDisplay.value = (ch.snippet && ch.snippet.title) || "";
+      if (el.custHandleDisplay) el.custHandleDisplay.value = (ch.snippet && ch.snippet.customUrl) || "";
+      if (el.custDescDisplay) el.custDescDisplay.value = (ch.snippet && ch.snippet.description) || "";
+      if (el.custUrlDisplay) el.custUrlDisplay.value = "https://www.youtube.com/channel/" + ch.id;
+      if (el.custViewChannelLink) el.custViewChannelLink.href = "https://www.youtube.com/channel/" + encodeURIComponent(ch.id);
+      if (el.custPictureStudioLink) el.custPictureStudioLink.href = "https://studio.youtube.com/channel/" + encodeURIComponent(ch.id) + "/editing/profile";
+      renderClientIds();
+    } catch (e){
+      custLog("Gagal memuat profil channel dari YouTube: " + (e.message || e), "error");
+    }
   }
 
   async function applyChannelBannerForAccount(acc, blob){
@@ -3820,17 +4252,68 @@
     return ch.id;
   }
 
-  function runApplyChannelBanner(){
-    if (bannerBusy || running){ showToast("Tunggu proses yang sedang berjalan selesai"); return; }
-    var targets = resolveBannerTargets();
-    if (!targets.length){ showToast("Login & pilih Brand Account yang aktif dulu"); return; }
+  function saveBannerLocalSettingsOnly(){
+    var lockBanner = el.custLockBannerModeChk ? el.custLockBannerModeChk.checked : true;
+    var persistLocal = el.custPersistLocalChk ? el.custPersistLocalChk.checked : true;
+    var fitMode = (el.custBannerFitSelect && el.custBannerFitSelect.value) || "cover";
     var srcImg = (customBannerImage && customBannerImage.img) || (userImages.length ? userImages[0].img : null);
-    if (!srcImg){ showToast("Pilih Gambar Banner dulu (atau tambah gambar di Bagian 3)"); return; }
+    var srcName = (customBannerImage && customBannerImage.name) || (userImages.length ? userImages[0].name : "Banner Channel");
+
+    thumbPrefs.useBannerOnly = lockBanner;
+    thumbPrefs.persistLocal = persistLocal;
+    thumbPrefs.bannerFitMode = fitMode;
+    thumbPrefs.savedAt = Date.now();
+    thumbPrefs.savedName = srcName;
+
+    if (persistLocal && srcImg){
+      renderBannerBlob2048(srcImg, function(err, blob){
+        if (!err && blob){
+          idbPutMedia("saved_banner", { blob: blob, name: srcName, savedAt: Date.now() }, function(saved){
+            saveThumbPrefs();
+            custLog("✓ Pengaturan & gambar banner (" + srcName + ") berhasil di-SAVE permanen di browser" + (saved ? " (IndexedDB)." : "."), "success");
+            showToast("Disave! Upload jadwal tak perlu masukin gambar lagi");
+          });
+        } else {
+          saveThumbPrefs();
+          showToast("Pengaturan disave!");
+        }
+      }, fitMode);
+    } else {
+      if (!persistLocal) idbDeleteMedia("saved_banner");
+      saveThumbPrefs();
+      custLog("✓ Pengaturan Mode Banner tersimpan: " + (lockBanner ? "Auto-skip thumbnail aktif (langsung pakai Banner Channel)." : "Mode thumbnail manual."), "success");
+      showToast("Pengaturan disave!");
+    }
+  }
+
+  function runApplyChannelBanner(fromStudioTab){
+    if (bannerBusy || running){ showToast("Tunggu proses yang sedang berjalan selesai"); return; }
+    var targets = resolveBannerTargets(fromStudioTab);
+    var srcImg = (customBannerImage && customBannerImage.img) || (userImages.length ? userImages[0].img : null);
+    var srcName = (customBannerImage && customBannerImage.name) || (userImages.length ? userImages[0].name : "Banner Channel");
+    var fitMode = (el.custBannerFitSelect && el.custBannerFitSelect.value) || thumbPrefs.bannerFitMode || "cover";
+
+    // Jika di tab Studio user cuma mau save pengaturan tanpa ganti file gambar baru (banner sudah ada di YouTube):
+    if (fromStudioTab && !srcImg){
+      saveBannerLocalSettingsOnly();
+      return;
+    }
+    if (!targets.length){
+      if (fromStudioTab){
+        saveBannerLocalSettingsOnly();
+        custLog("ℹ Belum ada akun login — gambar & pengaturan tetap disave secara lokal. Login dulu jika ingin langsung Publish ke YouTube.", "info");
+        return;
+      }
+      showToast("Login & pilih Brand Account yang aktif dulu");
+      return;
+    }
+    if (!srcImg){ showToast("Pilih Gambar Banner dulu (klik Change / Pilih Gambar Banner)"); return; }
 
     bannerBusy = true;
-    el.applyBannerBtn.disabled = true;
-    el.removeBannerBtn.disabled = true;
-    el.applyBannerBtn.textContent = "Merender 2048×1152 & mengupload...";
+    if (el.applyBannerBtn){ el.applyBannerBtn.disabled = true; el.applyBannerBtn.textContent = "Merender 2048×1152 & mengupload..."; }
+    if (el.removeBannerBtn) el.removeBannerBtn.disabled = true;
+    if (el.custPublishSaveBtn){ el.custPublishSaveBtn.disabled = true; el.custPublishSaveBtn.textContent = "Publishing..."; }
+    if (el.custRemoveBannerBtn) el.custRemoveBannerBtn.disabled = true;
     if (el.bannerStatusText) el.bannerStatusText.textContent = "Merender gambar ke 2048×1152 JPEG...";
     if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "flex";
     if (el.bannerPreviewImg) el.bannerPreviewImg.src = (customBannerImage && customBannerImage.url) || userImages[0].url;
@@ -3838,56 +4321,88 @@
     renderBannerBlob2048(srcImg, async function(err, blob){
       if (err){
         bannerBusy = false;
-        el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
-        el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)";
-        log("✗ Gagal render banner: " + err, "error");
+        if (el.applyBannerBtn){ el.applyBannerBtn.disabled = false; el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)"; }
+        if (el.removeBannerBtn) el.removeBannerBtn.disabled = false;
+        if (el.custPublishSaveBtn){ el.custPublishSaveBtn.disabled = false; el.custPublishSaveBtn.innerHTML = "&#128190; Publish &amp; Save"; }
+        if (el.custRemoveBannerBtn) el.custRemoveBannerBtn.disabled = false;
+        custLog("✗ Gagal render banner: " + err, "error");
         showToast(err);
         return;
       }
-      log("Banner dirender ke 2048×1152 JPEG (" + Math.round(blob.size / 1024) + " KB). Mengupload ke " + targets.length + " channel...", "info");
+      custLog("Banner dirender ke 2048×1152 JPEG (" + Math.round(blob.size / 1024) + " KB, mode: " + fitMode + "). Mengupload ke " + targets.length + " channel...", "info");
       var ok = 0, fail = 0;
       for (var i = 0; i < targets.length; i++){
         var acc = targets[i];
         if (isTokenExpired(acc) || acc.channelSuspended){
-          log("⏭ Lewati banner " + accountLabel(acc) + ": token habis / suspended.", "error");
+          custLog("⏭ Lewati banner " + accountLabel(acc) + ": token habis / suspended.", "error");
           fail++; continue;
         }
         try {
-          var res = await applyChannelBannerForAccount(acc, blob);
+          await applyChannelBannerForAccount(acc, blob);
           ok++;
-          log("✓ Banner Channel " + accountLabel(acc) + " BERHASIL diubah! (101 unit) — semua jadwal live baru tanpa thumbnails.set akan memakai gambar ini.", "success");
+          custLog("✓ Banner Channel " + accountLabel(acc) + " BERHASIL dipublikasikan! (101 unit) — semua jadwal live baru otomatis memakai gambar ini.", "success");
         } catch (e){
           fail++;
-          log("✗ Gagal ubah Banner " + accountLabel(acc) + ": " + (e.message || e), "error");
+          custLog("✗ Gagal ubah Banner " + accountLabel(acc) + ": " + (e.message || e), "error");
         }
       }
-      if (ok > 0 && el.bannerDisableThumbSetChk && el.bannerDisableThumbSetChk.checked && el.liveThumbChk){
-        el.liveThumbChk.checked = false;
-        log("ℹ Centang thumbnails.set dimatikan otomatis — jadwal live berikutnya bebas 429 & langsung memakai Banner Channel.", "info");
+
+      // Simpan permanen di browser (localStorage + IndexedDB) agar saat upload jadwal tidak perlu masukin gambar lagi
+      var shouldLock = fromStudioTab
+        ? (el.custLockBannerModeChk ? el.custLockBannerModeChk.checked : true)
+        : (el.bannerDisableThumbSetChk ? el.bannerDisableThumbSetChk.checked : true);
+      var shouldPersist = el.custPersistLocalChk ? el.custPersistLocalChk.checked : true;
+
+      if (ok > 0){
+        thumbPrefs.useBannerOnly = shouldLock;
+        thumbPrefs.persistLocal = shouldPersist;
+        thumbPrefs.bannerFitMode = fitMode;
+        thumbPrefs.savedAt = Date.now();
+        thumbPrefs.savedName = srcName;
+        if (shouldPersist){
+          idbPutMedia("saved_banner", { blob: blob, name: srcName, savedAt: Date.now() });
+        }
+        saveThumbPrefs();
+        if (shouldLock && el.liveThumbChk){
+          el.liveThumbChk.checked = false;
+          custLog("✓ Disave permanen! Saat upload CSV/Excel jadwal berikutnya tidak perlu masukin gambar/thumbnail lagi (bebas 429 & hemat 50 unit/event).", "success");
+        }
       }
+
       bannerBusy = false;
-      el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
-      el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)";
+      if (el.applyBannerBtn){ el.applyBannerBtn.disabled = false; el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)"; }
+      if (el.removeBannerBtn) el.removeBannerBtn.disabled = false;
+      if (el.custPublishSaveBtn){ el.custPublishSaveBtn.disabled = false; el.custPublishSaveBtn.innerHTML = "&#128190; Publish &amp; Save"; }
+      if (el.custRemoveBannerBtn) el.custRemoveBannerBtn.disabled = false;
       if (el.bannerStatusText){
         el.bannerStatusText.textContent = ok > 0
-          ? "✓ Banner berhasil diterapkan ke " + ok + " channel (" + Math.round(blob.size / 1024) + " KB, 2048×1152)."
+          ? "✓ Banner dipublikasikan & disave ke " + ok + " channel (" + Math.round(blob.size / 1024) + " KB, 2048×1152)."
           : "✗ Gagal mengubah banner, cek Log Output.";
       }
       renderClientIds();
-      showToast(ok ? ("Banner berhasil diubah (" + ok + " channel)") : "Gagal mengubah banner, cek log");
-    });
+      showToast(ok ? ("Publish & Save sukses (" + ok + " channel)!") : "Gagal mengubah banner, cek log");
+    }, fitMode);
   }
 
-  async function runRemoveChannelBanner(){
+  async function runRemoveChannelBanner(fromStudioTab){
     if (bannerBusy || running){ showToast("Tunggu proses yang sedang berjalan selesai"); return; }
-    var targets = resolveBannerTargets();
-    if (!targets.length){ showToast("Login & pilih Brand Account yang aktif dulu"); return; }
-    if (!window.confirm("Hapus Banner Image pada " + targets.length + " channel yang dipilih?")) return;
+    var targets = resolveBannerTargets(fromStudioTab);
+    if (!targets.length){
+      if (customBannerImage){
+        clearCustomBannerFile(true);
+        showToast("Gambar banner lokal dihapus");
+        return;
+      }
+      showToast("Login & pilih Brand Account yang aktif dulu");
+      return;
+    }
+    if (!window.confirm("Hapus Banner Image pada " + targets.length + " channel yang dipilih (termasuk banner tersimpan di browser)?")) return;
 
     bannerBusy = true;
-    el.applyBannerBtn.disabled = true;
-    el.removeBannerBtn.disabled = true;
-    el.removeBannerBtn.textContent = "Menghapus banner...";
+    if (el.applyBannerBtn) el.applyBannerBtn.disabled = true;
+    if (el.removeBannerBtn){ el.removeBannerBtn.disabled = true; el.removeBannerBtn.textContent = "Menghapus banner..."; }
+    if (el.custPublishSaveBtn) el.custPublishSaveBtn.disabled = true;
+    if (el.custRemoveBannerBtn){ el.custRemoveBannerBtn.disabled = true; el.custRemoveBannerBtn.textContent = "Removing..."; }
 
     var ok = 0, fail = 0;
     for (var i = 0; i < targets.length; i++){
@@ -3896,17 +4411,48 @@
       try {
         await removeChannelBannerForAccount(acc);
         ok++;
-        log("✓ Banner Channel " + accountLabel(acc) + " berhasil dihapus via API.", "success");
+        custLog("✓ Banner Channel " + accountLabel(acc) + " berhasil dihapus via API.", "success");
       } catch (e){
         fail++;
-        log("✗ Gagal hapus banner via API (" + accountLabel(acc) + "): " + (e.message || e) + " — jika ditolak API, klik tombol 'Buka Profile Studio' untuk klik Remove manual.", "error");
+        custLog("✗ Gagal hapus banner via API (" + accountLabel(acc) + "): " + (e.message || e) + " — jika ditolak API, klik 'Change di Studio ↗' untuk klik Remove manual.", "error");
       }
     }
+    clearCustomBannerFile(true);
+    thumbPrefs.useBannerOnly = false;
+    saveThumbPrefs();
+
     bannerBusy = false;
-    el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
-    el.removeBannerBtn.innerHTML = "&#128465; Remove Banner";
+    if (el.applyBannerBtn) el.applyBannerBtn.disabled = false;
+    if (el.removeBannerBtn){ el.removeBannerBtn.disabled = false; el.removeBannerBtn.innerHTML = "&#128465; Remove Banner"; }
+    if (el.custPublishSaveBtn) el.custPublishSaveBtn.disabled = false;
+    if (el.custRemoveBannerBtn){ el.custRemoveBannerBtn.disabled = false; el.custRemoveBannerBtn.textContent = "Remove"; }
     renderClientIds();
     showToast(ok ? ("Banner dihapus (" + ok + " channel)") : "Gagal hapus via API, cek log");
+  }
+
+  function restoreSavedBannerFromIdb(){
+    syncSavedThumbUi();
+    idbGetMedia("saved_banner", function(rec){
+      if (!rec || !rec.blob) return;
+      var url = URL.createObjectURL(rec.blob);
+      var img = new Image();
+      img.onload = function(){
+        customBannerImage = { img: img, url: url, name: rec.name || "saved-banner.jpg", blob: rec.blob };
+        var meta = "Tersimpan otomatis: " + customBannerImage.name + " (" + img.naturalWidth + "×" + img.naturalHeight + ")";
+        setStudioBannerPreviewSrc(url, meta);
+        if (el.bannerFileLabel) el.bannerFileLabel.textContent = meta;
+        if (el.clearBannerImgBtn) el.clearBannerImgBtn.style.display = "inline-block";
+        if (el.bannerPreviewImg) el.bannerPreviewImg.src = url;
+        if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "flex";
+        if (el.bannerStatusText) el.bannerStatusText.textContent = "✓ Banner tersimpan di browser & siap dipakai otomatis.";
+        syncSavedThumbUi();
+        renderAssetPreview();
+        if (events.length) renderEventsTable();
+        log("✓ Banner/Thumbnail tersimpan dipulihkan otomatis (" + customBannerImage.name + ").", "success");
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); };
+      img.src = url;
+    });
   }
 
   // ================= JADWAL LIVE (liveBroadcasts.insert + thumbnails.set + videos.update) =================
@@ -5935,7 +6481,7 @@
           catch (e){ cb({ ok: false, error: "Response upload tidak valid JSON" }); return; }
           var vidId = videoJson.id;
           var warnings = [];
-          var wantThumb = !!(el.liveThumbChk && el.liveThumbChk.checked && (row.thumbnail || userImages.length > 0));
+          var wantThumb = !!(!thumbPrefs.useBannerOnly && el.liveThumbChk && el.liveThumbChk.checked && (row.thumbnail || userImages.length > 0));
 
           var stepVidThumb = function(next){
             if (!wantThumb){ next(); return; }
@@ -6365,9 +6911,35 @@
   if (el.bannerAccountSelect) el.bannerAccountSelect.addEventListener("change", updateStudioProfileHref);
   if (el.pickBannerImgBtn) el.pickBannerImgBtn.addEventListener("click", function(){ el.bannerFileInput.click(); });
   if (el.bannerFileInput) el.bannerFileInput.addEventListener("change", function(e){ setCustomBannerFile(e.target.files); e.target.value = ""; });
-  if (el.clearBannerImgBtn) el.clearBannerImgBtn.addEventListener("click", clearCustomBannerFile);
-  if (el.applyBannerBtn) el.applyBannerBtn.addEventListener("click", runApplyChannelBanner);
-  if (el.removeBannerBtn) el.removeBannerBtn.addEventListener("click", runRemoveChannelBanner);
+  if (el.clearBannerImgBtn) el.clearBannerImgBtn.addEventListener("click", function(){ clearCustomBannerFile(true); });
+  if (el.applyBannerBtn) el.applyBannerBtn.addEventListener("click", function(){ runApplyChannelBanner(false); });
+  if (el.removeBannerBtn) el.removeBannerBtn.addEventListener("click", function(){ runRemoveChannelBanner(false); });
+
+  if (el.openBannerTabBtn) el.openBannerTabBtn.addEventListener("click", function(){ setMode("banner"); });
+  if (el.disableBannerOnlyBtn) el.disableBannerOnlyBtn.addEventListener("click", function(){
+    thumbPrefs.useBannerOnly = false;
+    saveThumbPrefs();
+    if (el.liveThumbChk) el.liveThumbChk.checked = true;
+    showToast("Kembali ke mode thumbnail manual");
+    log("Mode kunci Banner Channel dimatikan — kamu bisa pilih thumbnail manual lagi.", "info");
+  });
+  if (el.custAccountSelect) el.custAccountSelect.addEventListener("change", fetchChannelCustomizationProfile);
+  if (el.custRefreshBtn) el.custRefreshBtn.addEventListener("click", function(){ fetchChannelCustomizationProfile(); showToast("Memuat profil dari YouTube..."); });
+  if (el.custChangeBannerBtn) el.custChangeBannerBtn.addEventListener("click", function(){ el.custBannerFileInput.click(); });
+  if (el.custBannerFileInput) el.custBannerFileInput.addEventListener("change", function(e){ setCustomBannerFile(e.target.files); e.target.value = ""; });
+  if (el.custRemoveBannerBtn) el.custRemoveBannerBtn.addEventListener("click", function(){ runRemoveChannelBanner(true); });
+  if (el.custSaveLocalOnlyBtn) el.custSaveLocalOnlyBtn.addEventListener("click", saveBannerLocalSettingsOnly);
+  if (el.custPublishSaveBtn) el.custPublishSaveBtn.addEventListener("click", function(){ runApplyChannelBanner(true); });
+  if (el.custCancelBtn) el.custCancelBtn.addEventListener("click", function(){
+    clearCustomBannerFile(false);
+    fetchChannelCustomizationProfile();
+    showToast("Perubahan dibatalkan");
+  });
+  if (el.custCopyUrlBtn) el.custCopyUrlBtn.addEventListener("click", function(){
+    var u = el.custUrlDisplay && el.custUrlDisplay.value;
+    if (u) copyText(u, "URL Channel disalin");
+  });
+  if (el.clearLogBtn5) el.clearLogBtn5.addEventListener("click", function(){ if (el.logBody5) el.logBody5.innerHTML = ""; });
 
   el.selectAllChk.addEventListener("change", function(){
     var checked = this.checked;
@@ -6543,6 +7115,7 @@
   el.reloginAllBtn.addEventListener("click", reloginAllExpired);
   el.modeVideoBtn.addEventListener("click", function(){ setMode("video"); });
   el.modeLiveBtn.addEventListener("click", function(){ setMode("live"); });
+  if (el.modeBannerBtn) el.modeBannerBtn.addEventListener("click", function(){ setMode("banner"); });
   el.modePlaylistBtn.addEventListener("click", function(){ setMode("playlist"); });
   if (el.modePinChatBtn) el.modePinChatBtn.addEventListener("click", function(){ setMode("pinchat"); });
   if (el.modeDeleteBtn) el.modeDeleteBtn.addEventListener("click", function(){ setMode("delete"); });
@@ -6587,6 +7160,7 @@
   });
   el.downloadLogBtn2.addEventListener("click", plDownloadLog);
 
+  restoreSavedBannerFromIdb();
   applyModeUi();
   renderClientIds();
   updateGeneralUi();
