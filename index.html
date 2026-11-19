@@ -168,6 +168,7 @@
           <button class="btn-ghost" id="modeLiveBtn" style="flex:1;min-width:120px;">Jadwal Live</button>
           <button class="btn-ghost" id="modePlaylistBtn" style="flex:1;min-width:110px;">Playlist</button>
           <button class="btn-ghost" id="modePinChatBtn" style="flex:1;min-width:130px;">&#128204; Pin Chat (3x)</button>
+          <button class="btn-ghost" id="modeDeleteBtn" style="flex:1;min-width:130px;color:#fca5a5;">&#128465; Hapus Event</button>
         </div>
         <div class="note-box" id="modeNote" style="margin-top:10px;"></div>
       </div>
@@ -434,6 +435,7 @@
             <button class="btn-primary" id="uploadAllBtn">UPLOAD EVENT KE YOUTUBE</button>
             <button class="btn-ghost" id="pauseBtn" style="display:none;">&#9208; Jeda</button>
             <button class="btn-ghost" id="stopBtn" style="display:none;color:#ff6b6b;">&#9632; Stop</button>
+            <button class="btn-ghost" id="clearEventsListBtn" style="color:#fca5a5;" title="Kosongkan daftar CSV lokal (tidak menghapus di YouTube)">&#128465; Hapus Daftar</button>
           </div>
         </div>
 
@@ -441,6 +443,7 @@
           <button class="btn-ghost" id="fixThumbsBtn" style="display:none;flex:1;min-width:180px;">Perbaiki Thumbnail Gagal</button>
           <button class="btn-ghost" id="updateAllThumbsBtn" style="display:none;flex:1;min-width:180px;">&#128444; Ubah Thumbnail Event Sukses</button>
           <button class="btn-ghost" id="retryChatBtn" style="display:none;flex:1;min-width:180px;">&#128172; Kirim Ulang Chat Gagal</button>
+          <button class="btn-ghost" id="deleteSuccessYtBtn" style="display:none;flex:1;min-width:190px;color:#fca5a5;">&#128465; Hapus Event Sukses di YouTube</button>
         </div>
 
         <div id="exportWrap" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:12px;">
@@ -710,6 +713,88 @@
   </div>
   <!-- /pinChatWrap -->
 
+  <!-- SECTION HAPUS SEMUA EVENT (mode Delete) -->
+  <div id="deleteWrap" style="display:none;">
+  <section>
+    <div class="sec-head">
+      <div class="sec-head-left"><div class="num-badge">&#128465;</div><h2>Hapus Semua Event / Video di Channel (API)</h2></div>
+      <span class="tag-pill" id="delCountPill">0 event</span>
+    </div>
+    <div class="sec-body">
+      <div class="note-box" style="margin-bottom:14px;">
+        <b>Hapus event live maupun video langsung di Brand Account tanpa buka YouTube Studio:</b><br>
+        &bull; Ambil daftar event dari channel memakai <code class="inline">liveBroadcasts.list</code> / <code class="inline">playlistItems.list</code> (hanya <b>1 unit</b> per 50 event).<br>
+        &bull; Hapus massal memakai <code class="inline">liveBroadcasts.delete</code> (fallback otomatis ke <code class="inline">videos.delete</code>), biaya <b>50 unit/event</b> (&asymp; 200 penghapusan/hari per Client ID).<br>
+        &bull; <b style="color:#fca5a5;">Peringatan:</b> Penghapusan di YouTube bersifat <b>permanen</b> dan tidak bisa dibatalkan.
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;">
+        <div>
+          <label for="delAccountSelect">Target Brand Account / Channel</label>
+          <select id="delAccountSelect"></select>
+        </div>
+        <div>
+          <label for="delFilterSelect">Jenis Event yang Dimuat</label>
+          <select id="delFilterSelect">
+            <option value="upcoming" selected>Jadwal Live Mendatang (Upcoming)</option>
+            <option value="all_live">Semua Broadcast Live (Upcoming + Active + Selesai)</option>
+            <option value="completed">Live Selesai / Riwayat (Completed)</option>
+            <option value="all_videos">Semua Video &amp; Live Channel (termasuk Private)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn-white" id="delLoadBtn" style="flex:1;min-width:210px;">&#128269; Muat Semua Event dari Channel</button>
+        <button class="btn-ghost" id="delClearListBtn" style="display:none;">Kosongkan Daftar</button>
+      </div>
+
+      <div id="delControlsWrap" style="display:none;">
+        <div class="field" style="margin-bottom:12px;">
+          <input type="text" id="delSearchInput" placeholder="Filter judul / Video ID (opsional)...">
+        </div>
+
+        <div class="toolbar">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label class="checkbox-lbl"><input type="checkbox" id="delSelectAllChk" checked> Pilih semua</label>
+            <span style="font-size:11px;color:var(--muted);" id="delSelectedLabel">0 dipilih</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-primary" id="delRunBtn">&#128465; HAPUS SEMUA EVENT TERPILIH</button>
+            <button class="btn-ghost" id="delStopBtn" style="display:none;color:#ff6b6b;">&#9632; Stop</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;display:none;" id="delProgressWrap">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
+            <span id="delProgressTitle">Menghapus event di YouTube...</span><span class="mono" id="delProgressLabel">0/0</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="delProgressFill"></div></div>
+        </div>
+
+        <div class="table-wrap" style="max-height:420px;">
+          <table>
+            <thead><tr><th>Event / Video di Channel</th><th>Status / Privasi</th><th>Aksi</th></tr></thead>
+            <tbody id="delTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="log-box" style="margin-top:14px;">
+        <div class="log-head">
+          <span>Log Output Hapus Event</span>
+          <span style="display:flex;gap:14px;">
+            <button class="clear-btn" id="downloadLogBtn4">Unduh Log</button>
+            <button class="clear-btn" id="clearLogBtn4">Clear</button>
+          </span>
+        </div>
+        <div class="log-body" id="logBody4"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+  <!-- /deleteWrap -->
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -843,7 +928,7 @@
     return mode === "live" ? Math.floor(COST.DAILY_UNITS / LIVE_EVENT_COST) : COST.VIDEO_BUCKET;   // 66 vs 100
   }
   var LS_MODE = "yt_csv_mode";
-  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return (m === "live" || m === "playlist" || m === "pinchat") ? m : "video"; } catch (e){ return "video"; } })();
+  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return (m === "live" || m === "playlist" || m === "pinchat" || m === "delete") ? m : "video"; } catch (e){ return "video"; } })();
   // Default "Limit/akun" mengikuti kuota harian per Client ID sesuai mode: 66 (live) / 100 (video).
   // saveState/restoreState di bawah bisa menimpa ini kalau ada sesi tersimpan (dan mematikan limitAutoManaged).
   limitPerAccount = eventsPerDayPerClient(appMode);
@@ -870,9 +955,30 @@
     modeLiveBtn: document.getElementById("modeLiveBtn"),
     modePlaylistBtn: document.getElementById("modePlaylistBtn"),
     modePinChatBtn: document.getElementById("modePinChatBtn"),
+    modeDeleteBtn: document.getElementById("modeDeleteBtn"),
     videoLiveWrap: document.getElementById("videoLiveWrap"),
     playlistWrap: document.getElementById("playlistWrap"),
     pinChatWrap: document.getElementById("pinChatWrap"),
+    deleteWrap: document.getElementById("deleteWrap"),
+    delCountPill: document.getElementById("delCountPill"),
+    delAccountSelect: document.getElementById("delAccountSelect"),
+    delFilterSelect: document.getElementById("delFilterSelect"),
+    delLoadBtn: document.getElementById("delLoadBtn"),
+    delClearListBtn: document.getElementById("delClearListBtn"),
+    delControlsWrap: document.getElementById("delControlsWrap"),
+    delSearchInput: document.getElementById("delSearchInput"),
+    delSelectAllChk: document.getElementById("delSelectAllChk"),
+    delSelectedLabel: document.getElementById("delSelectedLabel"),
+    delRunBtn: document.getElementById("delRunBtn"),
+    delStopBtn: document.getElementById("delStopBtn"),
+    delProgressWrap: document.getElementById("delProgressWrap"),
+    delProgressTitle: document.getElementById("delProgressTitle"),
+    delProgressLabel: document.getElementById("delProgressLabel"),
+    delProgressFill: document.getElementById("delProgressFill"),
+    delTableBody: document.getElementById("delTableBody"),
+    logBody4: document.getElementById("logBody4"),
+    clearLogBtn4: document.getElementById("clearLogBtn4"),
+    downloadLogBtn4: document.getElementById("downloadLogBtn4"),
     pcCountPill: document.getElementById("pcCountPill"),
     pcAccountSelect: document.getElementById("pcAccountSelect"),
     pcCsvFileInput: document.getElementById("pcCsvFileInput"),
@@ -985,6 +1091,8 @@
     fixThumbsBtn: document.getElementById("fixThumbsBtn"),
     updateAllThumbsBtn: document.getElementById("updateAllThumbsBtn"),
     retryChatBtn: document.getElementById("retryChatBtn"),
+    clearEventsListBtn: document.getElementById("clearEventsListBtn"),
+    deleteSuccessYtBtn: document.getElementById("deleteSuccessYtBtn"),
     restoreBanner: document.getElementById("restoreBanner"),
 
     exportWrap: document.getElementById("exportWrap"),
@@ -1047,13 +1155,16 @@
     var live = appMode === "live";
     var playlist = appMode === "playlist";
     var pinchat = appMode === "pinchat";
-    el.modeVideoBtn.className = (!live && !playlist && !pinchat) ? "btn-white" : "btn-ghost";
+    var delmode = appMode === "delete";
+    el.modeVideoBtn.className = (!live && !playlist && !pinchat && !delmode) ? "btn-white" : "btn-ghost";
     el.modeLiveBtn.className = live ? "btn-white" : "btn-ghost";
     el.modePlaylistBtn.className = playlist ? "btn-white" : "btn-ghost";
     if (el.modePinChatBtn) el.modePinChatBtn.className = pinchat ? "btn-white" : "btn-ghost";
-    el.videoLiveWrap.style.display = (playlist || pinchat) ? "none" : "";
+    if (el.modeDeleteBtn) el.modeDeleteBtn.className = delmode ? "btn-primary" : "btn-ghost";
+    el.videoLiveWrap.style.display = (playlist || pinchat || delmode) ? "none" : "";
     el.playlistWrap.style.display = playlist ? "" : "none";
     if (el.pinChatWrap) el.pinChatWrap.style.display = pinchat ? "" : "none";
+    if (el.deleteWrap) el.deleteWrap.style.display = delmode ? "" : "none";
     if (playlist){
       renderPlaylistAccountSelect();
       el.modeNote.innerHTML = '<b>Mode Playlist.</b> Bikin playlist baru di channel kamu lalu isi dengan video &mdash; video kamu sendiri atau video publik orang lain yang sejenis. ' +
@@ -1063,6 +1174,11 @@
     if (pinchat){
       renderPinChatAccountSelect();
       el.modeNote.innerHTML = '<b>Mode Khusus Pin Chat (3x).</b> Mengirim pesan <b>3 kali berturut-turut</b> ke Live Chat setiap event via API Brand Account, plus tombol <b>Pin Chat</b> 1-klik &amp; generator <b>Script Auto-Pin 3x (.py Playwright)</b> tanpa membuka YouTube Studio.';
+      return;
+    }
+    if (delmode){
+      renderDeleteAccountSelect();
+      el.modeNote.innerHTML = '<b>Mode Hapus Event.</b> Muat seluruh jadwal live (upcoming/semua/selesai) atau semua video di Brand Account lalu hapus sekaligus via YouTube Data API v3 tanpa perlu membuka YouTube Studio.';
       return;
     }
     el.modeNote.innerHTML = live
@@ -1080,11 +1196,13 @@
     if (running){ showToast("Tunggu proses selesai dulu"); return; }
     if (plRunning){ showToast("Tunggu proses playlist selesai dulu"); return; }
     if (pcRunning){ showToast("Tunggu proses kirim chat selesai dulu"); return; }
+    if (delRunning){ showToast("Tunggu proses hapus event selesai dulu"); return; }
     if (m === appMode) return;
     appMode = m;
     lsSetRaw(LS_MODE, m);
-    if (m === "playlist" || m === "pinchat"){
-      log("Mode diganti ke: " + (m === "playlist" ? "Playlist" : "Pin Chat (3x)") + ".", "info");
+    if (m === "playlist" || m === "pinchat" || m === "delete"){
+      var mLabel = m === "playlist" ? "Playlist" : (m === "pinchat" ? "Pin Chat (3x)" : "Hapus Event");
+      log("Mode diganti ke: " + mLabel + ".", "info");
       applyModeUi();
       updateGeneralUi();
       return;
@@ -2418,6 +2536,10 @@
       el.retryChatBtn.style.display = nChat ? "block" : "none";
       el.retryChatBtn.textContent = "\uD83D\uDCAC Kirim Ulang Chat Gagal (" + nChat + ")";
     }
+    if (el.deleteSuccessYtBtn){
+      el.deleteSuccessYtBtn.style.display = allDone ? "block" : "none";
+      el.deleteSuccessYtBtn.textContent = "\uD83D\uDDD1 Hapus Event Sukses di YouTube (" + allDone + ")";
+    }
   }
 
   function renderEventsTable(){
@@ -2577,6 +2699,7 @@
     renderPlaylistAccountSelect();
     renderPinChatAccountSelect();
     renderBannerAccountSelect();
+    renderDeleteAccountSelect();
     updateUploadBtnState();
   }
 
@@ -5266,6 +5389,502 @@
     showToast("Script auto_pin_chat_" + repeatCnt + "x.py diunduh");
   }
 
+  // ================= MODE HAPUS SEMUA EVENT DI YOUTUBE (API) =================
+  var delRunning = false;
+  var delStopRequested = false;
+  var delLoading = false;
+  var delItems = [];       // { _id, videoId, title, thumb, dateStr, privacy, lifeCycle, kind, accId, channelTitle, channelId, status, message }
+  var delSelected = {};    // _id -> bool
+  var delLogBuffer = [];
+
+  function delAppendLogLine(ts, type, text){
+    if (!el.logBody4) return;
+    var line = document.createElement("div");
+    line.className = "log-line " + type;
+    var t = document.createElement("span");
+    t.className = "t";
+    t.textContent = "[" + fmtTime(ts) + "]";
+    var msg = document.createElement("span");
+    msg.textContent = text;
+    line.appendChild(t);
+    line.appendChild(msg);
+    el.logBody4.appendChild(line);
+    el.logBody4.scrollTop = el.logBody4.scrollHeight;
+  }
+  function delLog(text, type){
+    type = type || "info";
+    var ts = Date.now();
+    delAppendLogLine(ts, type, text);
+    delLogBuffer.push({ t: ts, type: type, text: String(text) });
+    if (delLogBuffer.length > LOG_MAX) delLogBuffer = delLogBuffer.slice(delLogBuffer.length - LOG_MAX);
+  }
+  function delDownloadLog(){
+    if (!delLogBuffer.length){ showToast("Log Hapus Event masih kosong"); return; }
+    var lines = delLogBuffer.map(function(l){ return "[" + fmtDateTime(l.t) + "] [" + l.type.toUpperCase() + "] " + l.text; });
+    var header = "Log Hapus Event YouTube - diunduh " + fmtDateTime(Date.now()) + "\n" + new Array(60).join("-") + "\n";
+    var blob = new Blob([header + lines.join("\n") + "\n"], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "log-hapus-event-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".txt";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+  }
+
+  function renderDeleteAccountSelect(){
+    if (!el.delAccountSelect) return;
+    var prev = el.delAccountSelect.value;
+    if (!accounts.length){
+      el.delAccountSelect.innerHTML = '<option value="">(belum ada akun / Brand Channel login)</option>';
+      return;
+    }
+    var opts = [];
+    if (accounts.length > 1){
+      opts.push('<option value="__ALL__">Semua Brand Account Aktif (' + accounts.length + ' channel)</option>');
+    }
+    accounts.forEach(function(a, i){
+      var tag = a.channelSuspended ? " [SUSPENDED]" : (isTokenExpired(a) ? " [Token habis]" : "");
+      var lbl = (a.channelTitle || a.email || ("Akun " + (i + 1))) + (a.channelId ? " (" + a.channelId + ")" : "") + tag;
+      opts.push('<option value="' + i + '">' + escapeHtml(lbl) + '</option>');
+    });
+    el.delAccountSelect.innerHTML = opts.join("");
+    if (prev && (prev === "__ALL__" || Number(prev) < accounts.length)) el.delAccountSelect.value = prev;
+  }
+
+  function resolveDeleteAccounts(){
+    if (!accounts.length) return [];
+    var v = el.delAccountSelect ? el.delAccountSelect.value : "";
+    if (v === "__ALL__"){
+      return accounts.filter(function(a){ return !isTokenExpired(a) && !a.channelSuspended; });
+    }
+    var acc = accounts[Number(v)];
+    return acc ? [acc] : [];
+  }
+
+  // Hapus 1 event/video di YouTube via API (liveBroadcasts.delete -> fallback videos.delete + auto-retry 429)
+  async function deleteSingleItemFromYouTube(videoId, kind, acc){
+    var token = await ensureFreshToken(acc);
+    var endpoints = kind === "video"
+      ? ["https://www.googleapis.com/youtube/v3/videos?id=" + encodeURIComponent(videoId)]
+      : [
+          "https://www.googleapis.com/youtube/v3/liveBroadcasts?id=" + encodeURIComponent(videoId),
+          "https://www.googleapis.com/youtube/v3/videos?id=" + encodeURIComponent(videoId)
+        ];
+
+    var lastErr = "gagal menghapus";
+    for (var ei = 0; ei < endpoints.length; ei++){
+      var url = endpoints[ei];
+      for (var attempt = 1; attempt <= 3; attempt++){
+        var res = await fetch(url, {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token }
+        });
+        addClientQuotaUsage(acc.clientId, "live", 50);
+        if (res.ok || res.status === 204){
+          return { ok: true };
+        }
+        var txt = await res.text();
+        if (res.status === 429 && attempt < 3){
+          await new Promise(function(r){ setTimeout(r, attempt === 1 ? 4000 : 8000); });
+          continue;
+        }
+        var cls = classifyApiError(res.status, txt);
+        if (cls.auth){
+          acc.expired = true;
+          return { ok: false, authExpired: true, error: "Token habis (401) — klik Login ulang" };
+        }
+        if (cls.quota){
+          return { ok: false, quotaExceeded: true, error: "Kuota API Client ID habis (quotaExceeded)" };
+        }
+        var det = extractApiErrorDetail(txt);
+        // Jika liveBroadcasts.delete menolak 404/400 (mis. broadcast sudah jadi video biasa), coba fallback videos.delete
+        if (ei === 0 && endpoints.length > 1 && (res.status === 404 || res.status === 400 || det.reason === "liveBroadcastNotFound")){
+          lastErr = "(" + res.status + " " + (det.reason || "") + ")";
+          break;
+        }
+        // Jika videos.delete juga 404 -> memang sudah terhapus
+        if (res.status === 404 && (det.reason === "videoNotFound" || det.reason === "liveBroadcastNotFound")){
+          return { ok: true, alreadyGone: true };
+        }
+        return { ok: false, error: "(" + res.status + (det.reason ? " " + det.reason : "") + ") " + (det.message || txt.slice(0, 120)) };
+      }
+    }
+    return { ok: false, error: lastErr };
+  }
+
+  async function fetchChannelItemsForDelete(acc, filterMode){
+    var token = await ensureFreshToken(acc);
+    var out = [];
+    var seen = {};
+    var MAX_PAGES = 10; // maks 500 item per channel sekali scan
+
+    if (filterMode === "all_videos"){
+      // Ambil uploads playlist ID channel (1 unit)
+      var chRes = await fetch("https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&mine=true", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      addClientQuotaUsage(acc.clientId, "live", 1);
+      var chTxt = await chRes.text();
+      if (!chRes.ok) throw new Error("channels.list (" + chRes.status + "): " + chTxt.slice(0, 140));
+      var chJson = JSON.parse(chTxt);
+      var ch = chJson.items && chJson.items[0];
+      var uploadsId = ch && ch.contentDetails && ch.contentDetails.relatedPlaylists && ch.contentDetails.relatedPlaylists.uploads;
+      if (!uploadsId) return [];
+
+      var pageToken = "";
+      for (var p = 0; p < MAX_PAGES; p++){
+        var u = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,status&maxResults=50&playlistId=" + encodeURIComponent(uploadsId) +
+                (pageToken ? "&pageToken=" + encodeURIComponent(pageToken) : "");
+        var r = await fetch(u, { headers: { "Authorization": "Bearer " + token } });
+        addClientQuotaUsage(acc.clientId, "live", 1);
+        var t = await r.text();
+        if (!r.ok) throw new Error("playlistItems.list (" + r.status + "): " + t.slice(0, 140));
+        var d = JSON.parse(t);
+        (d.items || []).forEach(function(it){
+          var vid = it.snippet && it.snippet.resourceId && it.snippet.resourceId.videoId;
+          if (!vid || seen[vid]) return;
+          seen[vid] = true;
+          out.push({
+            _id: genId(),
+            videoId: vid,
+            title: (it.snippet && it.snippet.title) || vid,
+            thumb: (it.snippet && it.snippet.thumbnails && it.snippet.thumbnails.default && it.snippet.thumbnails.default.url) || "",
+            dateStr: (it.snippet && it.snippet.publishedAt) || "",
+            privacy: (it.status && it.status.privacyStatus) || "-",
+            lifeCycle: "video",
+            kind: "video",
+            accId: acc.id,
+            channelTitle: acc.channelTitle || acc.email || "",
+            channelId: acc.channelId || "",
+            status: "ready",
+            message: ""
+          });
+        });
+        pageToken = d.nextPageToken || "";
+        if (!pageToken) break;
+      }
+      return out;
+    }
+
+    // Mode liveBroadcasts: JANGAN gabungkan mine=true dengan broadcastStatus (aturan API YouTube!)
+    var baseQuery = filterMode === "upcoming"
+      ? "broadcastStatus=upcoming"
+      : (filterMode === "completed" ? "broadcastStatus=completed" : "mine=true");
+
+    var pageToken2 = "";
+    for (var p2 = 0; p2 < MAX_PAGES; p2++){
+      var url2 = "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&maxResults=50&" + baseQuery +
+                 (pageToken2 ? "&pageToken=" + encodeURIComponent(pageToken2) : "");
+      var r2 = await fetch(url2, { headers: { "Authorization": "Bearer " + token } });
+      addClientQuotaUsage(acc.clientId, "live", 1);
+      var t2 = await r2.text();
+      if (!r2.ok) throw new Error("liveBroadcasts.list (" + r2.status + "): " + t2.slice(0, 160));
+      var d2 = JSON.parse(t2);
+      (d2.items || []).forEach(function(it){
+        var vid = it.id;
+        if (!vid || seen[vid]) return;
+        seen[vid] = true;
+        out.push({
+          _id: genId(),
+          videoId: vid,
+          title: (it.snippet && it.snippet.title) || vid,
+          thumb: (it.snippet && it.snippet.thumbnails && it.snippet.thumbnails.default && it.snippet.thumbnails.default.url) || "",
+          dateStr: (it.snippet && (it.snippet.scheduledStartTime || it.snippet.publishedAt)) || "",
+          privacy: (it.status && it.status.privacyStatus) || "-",
+          lifeCycle: (it.status && it.status.lifeCycleStatus) || "live",
+          kind: "live",
+          accId: acc.id,
+          channelTitle: acc.channelTitle || acc.email || "",
+          channelId: acc.channelId || "",
+          status: "ready",
+          message: ""
+        });
+      });
+      pageToken2 = d2.nextPageToken || "";
+      if (!pageToken2) break;
+    }
+    return out;
+  }
+
+  function delVisibleItems(){
+    var q = (el.delSearchInput && el.delSearchInput.value || "").trim().toLowerCase();
+    if (!q) return delItems;
+    return delItems.filter(function(it){
+      return (it.title || "").toLowerCase().indexOf(q) !== -1 ||
+             (it.videoId || "").toLowerCase().indexOf(q) !== -1 ||
+             (it.channelTitle || "").toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function updateDeleteSelectionUi(){
+    var vis = delVisibleItems();
+    var activeVis = vis.filter(function(it){ return it.status !== "deleted"; });
+    var selCount = activeVis.filter(function(it){ return !!delSelected[it._id]; }).length;
+    if (el.delSelectedLabel) el.delSelectedLabel.textContent = selCount + " dipilih (dari " + activeVis.length + " aktif)";
+    if (el.delSelectAllChk) el.delSelectAllChk.checked = activeVis.length > 0 && selCount === activeVis.length;
+    if (el.delRunBtn){
+      el.delRunBtn.disabled = delRunning || selCount === 0;
+      if (!delRunning) el.delRunBtn.innerHTML = "&#128465; HAPUS " + selCount + " EVENT TERPILIH";
+    }
+    if (el.delCountPill) el.delCountPill.textContent = delItems.filter(function(it){ return it.status !== "deleted"; }).length + " event";
+  }
+
+  function renderDeleteTable(){
+    if (!el.delTableBody) return;
+    if (el.delClearListBtn) el.delClearListBtn.style.display = delItems.length ? "inline-block" : "none";
+    if (!delItems.length){
+      if (el.delControlsWrap) el.delControlsWrap.style.display = "none";
+      el.delTableBody.innerHTML = "";
+      updateDeleteSelectionUi();
+      return;
+    }
+    if (el.delControlsWrap) el.delControlsWrap.style.display = "block";
+    var vis = delVisibleItems();
+    el.delTableBody.innerHTML = vis.map(function(it){
+      var checked = delSelected[it._id] && it.status !== "deleted" ? "checked" : "";
+      var disabled = (delRunning || it.status === "deleted") ? "disabled" : "";
+      var dateFmt = it.dateStr ? it.dateStr.replace("T", " ").slice(0, 16) + " UTC" : "-";
+      var thumbHtml = it.thumb
+        ? '<img class="row-thumb" src="' + escapeHtml(it.thumb) + '" alt="">'
+        : '';
+      var privCls = ["public", "unlisted", "private"].indexOf(it.privacy) !== -1 ? it.privacy : "private";
+      var stHtml = "";
+      if (it.status === "ready") stHtml = '<button class="btn-ghost del-one-btn" data-del-id="' + it._id + '" style="padding:5px 10px;font-size:11px;color:#fca5a5;" ' + (delRunning ? "disabled" : "") + '>Hapus</button>';
+      else if (it.status === "loading") stHtml = '<span class="status-tag loading">Menghapus...</span>';
+      else if (it.status === "deleted") stHtml = '<span class="status-tag sukses">Terhapus</span>';
+      else stHtml = '<div><span class="status-tag gagal">Gagal</span><div style="font-size:10px;color:#fca5a5;max-width:150px;margin-top:2px;">' + escapeHtml(it.message || "") + '</div></div>';
+
+      return '<tr style="' + (it.status === "deleted" ? "opacity:.45;" : "") + '">' +
+        '<td>' +
+          '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
+            '<input type="checkbox" class="del-row-chk" data-id="' + it._id + '" ' + checked + ' ' + disabled + ' style="margin-top:3px;">' +
+            thumbHtml +
+            '<span>' +
+              '<div style="font-weight:500;">' + escapeHtml(it.title) + '</div>' +
+              '<div class="mono" style="font-size:10.5px;color:#93c5fd;margin-top:2px;"><a href="' + watchUrl(it.videoId) + '" target="_blank" rel="noopener">' + escapeHtml(it.videoId) + '</a> &bull; ' + escapeHtml(dateFmt) + '</div>' +
+              '<div style="font-size:10.5px;color:var(--muted);margin-top:2px;">' + escapeHtml(it.channelTitle) + ' &bull; ' + escapeHtml(it.lifeCycle) + '</div>' +
+            '</span>' +
+          '</label>' +
+        '</td>' +
+        '<td><span class="badge-privacy ' + privCls + '">' + escapeHtml(it.privacy) + '</span></td>' +
+        '<td>' + stHtml + '</td>' +
+      '</tr>';
+    }).join("");
+
+    Array.prototype.forEach.call(el.delTableBody.querySelectorAll(".del-row-chk"), function(chk){
+      chk.addEventListener("change", function(){
+        delSelected[this.getAttribute("data-id")] = this.checked;
+        updateDeleteSelectionUi();
+      });
+    });
+    Array.prototype.forEach.call(el.delTableBody.querySelectorAll(".del-one-btn"), function(btn){
+      btn.addEventListener("click", function(){
+        if (delRunning) return;
+        var id = this.getAttribute("data-del-id");
+        var item = delItems.find(function(x){ return x._id === id; });
+        if (!item) return;
+        if (!window.confirm("Hapus permanen event \"" + item.title + "\" (" + item.videoId + ") di YouTube?")) return;
+        runDeleteItems([item]);
+      });
+    });
+    updateDeleteSelectionUi();
+  }
+
+  async function runLoadChannelEventsForDelete(){
+    if (delLoading || delRunning){ showToast("Sedang memproses, tunggu sebentar"); return; }
+    var targetAccs = resolveDeleteAccounts();
+    if (!targetAccs.length){ showToast("Login & pilih Brand Account yang aktif dulu di Bagian 1"); return; }
+    var filterMode = (el.delFilterSelect && el.delFilterSelect.value) || "upcoming";
+
+    delLoading = true;
+    el.delLoadBtn.disabled = true;
+    el.delLoadBtn.textContent = "Memuat daftar event dari YouTube...";
+    delItems = [];
+    delSelected = {};
+    delLog("Memuat daftar event (" + filterMode + ") dari " + targetAccs.length + " channel...", "info");
+
+    var totalLoaded = 0;
+    for (var i = 0; i < targetAccs.length; i++){
+      var acc = targetAccs[i];
+      if (isTokenExpired(acc) || acc.channelSuspended){
+        delLog("⏭ Lewati " + accountLabel(acc) + ": token habis / channel suspended.", "error");
+        continue;
+      }
+      try {
+        var list = await fetchChannelItemsForDelete(acc, filterMode);
+        list.forEach(function(it){
+          delItems.push(it);
+          delSelected[it._id] = true;
+        });
+        totalLoaded += list.length;
+        delLog("✓ " + accountLabel(acc) + ": ditemukan " + list.length + " event.", "success");
+      } catch (e){
+        delLog("✗ Gagal muat dari " + accountLabel(acc) + ": " + (e.message || e), "error");
+      }
+    }
+
+    delLoading = false;
+    el.delLoadBtn.disabled = false;
+    el.delLoadBtn.innerHTML = "&#128269; Muat Semua Event dari Channel";
+    renderDeleteTable();
+    renderClientIds();
+    if (totalLoaded === 0) showToast("Tidak ada event ditemukan untuk filter ini");
+    else showToast("Ditemukan " + totalLoaded + " event siap dikelola");
+  }
+
+  async function runDeleteItems(targetList){
+    if (delRunning){ showToast("Proses hapus sedang berjalan"); return; }
+    if (!targetList.length){ showToast("Pilih minimal 1 event untuk dihapus"); return; }
+
+    delRunning = true;
+    delStopRequested = false;
+    if (el.delRunBtn){ el.delRunBtn.disabled = true; el.delRunBtn.textContent = "MENGHAPUS..."; }
+    if (el.delLoadBtn) el.delLoadBtn.disabled = true;
+    if (el.delStopBtn){ el.delStopBtn.style.display = "inline-block"; el.delStopBtn.disabled = false; el.delStopBtn.textContent = "\u25A0 Stop"; }
+    if (el.delProgressWrap) el.delProgressWrap.style.display = "block";
+    if (el.delProgressLabel) el.delProgressLabel.textContent = "0/" + targetList.length;
+    if (el.delProgressFill) el.delProgressFill.style.width = "0%";
+    delLog("Memulai penghapusan permanen " + targetList.length + " event di YouTube...", "info");
+
+    var ok = 0, fail = 0;
+    for (var i = 0; i < targetList.length; i++){
+      if (delStopRequested){
+        delLog("Dihentikan user pada " + i + "/" + targetList.length + ".", "error");
+        break;
+      }
+      var item = targetList[i];
+      var acc = accounts.find(function(a){ return a.id === item.accId || (item.channelId && a.channelId === item.channelId); });
+      if (!acc || isTokenExpired(acc)){
+        item.status = "gagal";
+        item.message = "Akun belum login / token habis";
+        delLog("✗ [" + (i + 1) + "/" + targetList.length + "] " + item.videoId + ": token akun habis.", "error");
+        fail++;
+      } else {
+        item.status = "loading";
+        if (el.delProgressTitle) el.delProgressTitle.textContent = "Menghapus [" + (i + 1) + "/" + targetList.length + "] " + item.title;
+        renderDeleteTable();
+        try {
+          var res = await deleteSingleItemFromYouTube(item.videoId, item.kind, acc);
+          if (res.ok){
+            item.status = "deleted";
+            delSelected[item._id] = false;
+            ok++;
+            delLog("✓ [" + (i + 1) + "/" + targetList.length + "] TERHAPUS: " + item.title + " (" + item.videoId + ")", "success");
+          } else {
+            item.status = "gagal";
+            item.message = res.error || "gagal";
+            fail++;
+            delLog("✗ [" + (i + 1) + "/" + targetList.length + "] GAGAL (" + item.videoId + "): " + item.message, "error");
+            if (res.quotaExceeded || res.authExpired){
+              delLog("⚠ Dihentikan sementara karena " + res.error, "error");
+              renderAccountsList();
+              break;
+            }
+          }
+        } catch (e){
+          item.status = "gagal";
+          item.message = e.message || String(e);
+          fail++;
+          delLog("✗ [" + (i + 1) + "/" + targetList.length + "] ERROR (" + item.videoId + "): " + item.message, "error");
+        }
+      }
+      if (el.delProgressLabel) el.delProgressLabel.textContent = (i + 1) + "/" + targetList.length;
+      if (el.delProgressFill) el.delProgressFill.style.width = Math.round((i + 1) / targetList.length * 100) + "%";
+      renderDeleteTable();
+      renderClientIds();
+      if (i + 1 < targetList.length && !delStopRequested){
+        await new Promise(function(r){ setTimeout(r, 600); });
+      }
+    }
+
+    delRunning = false;
+    delStopRequested = false;
+    if (el.delLoadBtn) el.delLoadBtn.disabled = false;
+    if (el.delStopBtn) el.delStopBtn.style.display = "none";
+    renderDeleteTable();
+    renderClientIds();
+    delLog("Selesai hapus event: " + ok + " terhapus, " + fail + " gagal.", ok ? "success" : "error");
+    showToast("Selesai: " + ok + " terhapus" + (fail ? ", " + fail + " gagal" : ""));
+  }
+
+  function runDeleteSelectedEvents(){
+    var list = delVisibleItems().filter(function(it){ return it.status !== "deleted" && delSelected[it._id]; });
+    if (!list.length){ showToast("Belum ada event yang dicentang"); return; }
+    if (!window.confirm("HAPUS PERMANEN " + list.length + " event terpilih dari Channel YouTube?\n\nAksi ini tidak dapat dibatalkan (biaya ~" + (list.length * 50) + " unit kuota API). Lanjutkan?")) return;
+    runDeleteItems(list);
+  }
+
+  // Hapus semua baris event lokal di Bagian 4 (bersihkan tabel + localStorage sesi)
+  function clearAllLocalEvents(){
+    if (running){ showToast("Stop proses upload dulu sebelum menghapus daftar"); return; }
+    if (!events.length){ showToast("Daftar event sudah kosong"); return; }
+    if (!window.confirm("Kosongkan semua " + events.length + " baris event dari tabel lokal ini?\n(Event yang sudah terupload di YouTube TIDAK ikut terhapus; untuk menghapus di YouTube pakai tab 'Hapus Event' atau tombol 'Hapus Event Sukses di YouTube'.)")) return;
+    try { localStorage.removeItem(LS_STATE); } catch (e){}
+    events = [];
+    selectedIds = {};
+    lastRun = null;
+    if (el.csvFileInput) el.csvFileInput.value = "";
+    if (el.warnBox) el.warnBox.innerHTML = "";
+    if (el.restoreBanner) el.restoreBanner.style.display = "none";
+    renderPreviewTable();
+    renderEventsTable();
+    renderAssetPreview();
+    log("Semua baris event di daftar lokal dihapus.", "info");
+    showToast("Daftar event dikosongkan");
+  }
+
+  // Hapus semua event yang baru sukses dibuat di sesi ini langsung dari YouTube (Bagian 4)
+  async function deleteAllSessionSuccessOnYouTube(){
+    if (running || delRunning){ showToast("Tunggu proses yang sedang berjalan selesai dulu"); return; }
+    var rows = doneRows(false);
+    if (!rows.length){ showToast("Belum ada event sukses di sesi ini"); return; }
+    if (!window.confirm("HAPUS PERMANEN " + rows.length + " event yang sudah sukses dibuat di sesi ini langsung dari Channel YouTube?\n\nAksi ini tidak dapat dibatalkan (~" + (rows.length * 50) + " unit kuota API).")) return;
+
+    running = true;
+    updateUploadBtnState();
+    if (el.deleteSuccessYtBtn){ el.deleteSuccessYtBtn.disabled = true; el.deleteSuccessYtBtn.textContent = "Menghapus di YouTube..."; }
+    log("Mulai menghapus " + rows.length + " event sukses sesi ini di YouTube...", "info");
+
+    var ok = 0, fail = 0;
+    for (var i = 0; i < rows.length; i++){
+      var r = rows[i];
+      var acc = findAccountForRow(r);
+      if (!acc){
+        log("⏭ Lewati hapus \"" + r.title + "\" (" + r.videoId + "): akun belum login / token habis.", "error");
+        fail++; continue;
+      }
+      try {
+        var res = await deleteSingleItemFromYouTube(r.videoId, r.mode === "live" ? "live" : "video", acc);
+        if (res.ok){
+          ok++;
+          log("✓ [" + (i + 1) + "/" + rows.length + "] TERHAPUS di YouTube: " + r.title + " (" + r.videoId + ")", "success");
+          r.status = "ready";
+          r.videoId = null;
+          r.message = "Dihapus dari YouTube";
+          r.chatSent = false;
+          r.chatSentCount = 0;
+        } else {
+          fail++;
+          log("✗ [" + (i + 1) + "/" + rows.length + "] Gagal hapus (" + r.videoId + "): " + res.error, "error");
+          if (res.quotaExceeded || res.authExpired) break;
+        }
+      } catch (e){
+        fail++;
+        log("✗ Error hapus (" + r.videoId + "): " + (e.message || e), "error");
+      }
+      renderEventsTable();
+      renderClientIds();
+      if (i + 1 < rows.length) await new Promise(function(res){ setTimeout(res, 600); });
+    }
+
+    running = false;
+    if (el.deleteSuccessYtBtn) el.deleteSuccessYtBtn.disabled = false;
+    updateUploadBtnState();
+    renderEventsTable();
+    renderClientIds();
+    log("Selesai hapus event sesi di YouTube: " + ok + " terhapus, " + fail + " gagal.", ok ? "success" : "error");
+    showToast(ok + " event dihapus di YouTube" + (fail ? ", " + fail + " gagal" : ""));
+  }
+
   // ================= UPLOAD KE YOUTUBE (videos.insert) =================
   // token dioper eksplisit (bukan global) supaya jelas akun mana yang dipakai tiap panggilan.
   function uploadOneEvent(row, token, videoBlob, cb){
@@ -5926,6 +6545,21 @@
   el.modeLiveBtn.addEventListener("click", function(){ setMode("live"); });
   el.modePlaylistBtn.addEventListener("click", function(){ setMode("playlist"); });
   if (el.modePinChatBtn) el.modePinChatBtn.addEventListener("click", function(){ setMode("pinchat"); });
+  if (el.modeDeleteBtn) el.modeDeleteBtn.addEventListener("click", function(){ setMode("delete"); });
+  if (el.clearEventsListBtn) el.clearEventsListBtn.addEventListener("click", clearAllLocalEvents);
+  if (el.deleteSuccessYtBtn) el.deleteSuccessYtBtn.addEventListener("click", deleteAllSessionSuccessOnYouTube);
+  if (el.delLoadBtn) el.delLoadBtn.addEventListener("click", runLoadChannelEventsForDelete);
+  if (el.delClearListBtn) el.delClearListBtn.addEventListener("click", function(){ if (delRunning) return; delItems = []; delSelected = {}; renderDeleteTable(); showToast("Daftar hapus dikosongkan"); });
+  if (el.delSearchInput) el.delSearchInput.addEventListener("input", renderDeleteTable);
+  if (el.delSelectAllChk) el.delSelectAllChk.addEventListener("change", function(){
+    var chk = this.checked;
+    delVisibleItems().forEach(function(it){ if (it.status !== "deleted") delSelected[it._id] = chk; });
+    renderDeleteTable();
+  });
+  if (el.delRunBtn) el.delRunBtn.addEventListener("click", runDeleteSelectedEvents);
+  if (el.delStopBtn) el.delStopBtn.addEventListener("click", function(){ if (delRunning){ delStopRequested = true; el.delStopBtn.disabled = true; el.delStopBtn.textContent = "Menghentikan..."; } });
+  if (el.clearLogBtn4) el.clearLogBtn4.addEventListener("click", function(){ el.logBody4.innerHTML = ""; delLogBuffer = []; });
+  if (el.downloadLogBtn4) el.downloadLogBtn4.addEventListener("click", delDownloadLog);
   if (el.pcLoadFromLiveBtn) el.pcLoadFromLiveBtn.addEventListener("click", pcLoadFromCurrentLiveSession);
   if (el.pcPickFileBtn) el.pcPickFileBtn.addEventListener("click", function(){ el.pcCsvFileInput.click(); });
   if (el.pcCsvFileInput) el.pcCsvFileInput.addEventListener("change", function(e){ pcHandleFile(e.target.files); e.target.value = ""; });
