@@ -144,7 +144,7 @@
     <div class="brand">
       <div class="brand-icon">&#9654;</div>
       <div>
-        <h1>YouTube Jhony Auto Tools</h1>
+        <h1>YouTube MangRe Auto Tools</h1>
         <p>Bulk jadwal Excel/CSV &bull; Support <b>Brand Account</b> via OAuth API (tanpa buka YouTube Studio)</p>
       </div>
     </div>
@@ -163,10 +163,11 @@
     <div class="sec-body">
       <div class="field">
         <label>Mode</label>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-white" id="modeVideoBtn" style="flex:1;">Upload Video</button>
-          <button class="btn-ghost" id="modeLiveBtn" style="flex:1;">Jadwal Live</button>
-          <button class="btn-ghost" id="modePlaylistBtn" style="flex:1;">Playlist</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-white" id="modeVideoBtn" style="flex:1;min-width:120px;">Upload Video</button>
+          <button class="btn-ghost" id="modeLiveBtn" style="flex:1;min-width:120px;">Jadwal Live</button>
+          <button class="btn-ghost" id="modePlaylistBtn" style="flex:1;min-width:110px;">Playlist</button>
+          <button class="btn-ghost" id="modePinChatBtn" style="flex:1;min-width:130px;">&#128204; Pin Chat (3x)</button>
         </div>
         <div class="note-box" id="modeNote" style="margin-top:10px;"></div>
       </div>
@@ -293,6 +294,14 @@
               <option value="PT">US Pacific (PST/PDT)</option>
             </select>
           </label>
+          <label style="display:flex;align-items:center;gap:8px;margin:0;">Kirim <code class="inline">Isi_Chatt</code>:
+            <select id="liveChatRepeatSelect" style="width:auto;padding:7px 10px;">
+              <option value="3" selected>3x berturut-turut</option>
+              <option value="2">2x</option>
+              <option value="1">1x</option>
+              <option value="0">Matikan (0x)</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -344,11 +353,58 @@
         <input type="checkbox" id="liveThumbChk" checked> Langsung ubah gambar thumbnail di YouTube (<code class="inline">thumbnails.set</code>, 50 unit/event &bull; aktif di Mode Live &amp; Video)
       </label>
 
-      <label class="checkbox-lbl" id="corsProxyThumbWrap" style="display:flex;margin-bottom:12px;color:#93c5fd;">
+      <label class="checkbox-lbl" id="corsProxyThumbWrap" style="display:flex;margin-bottom:8px;color:#93c5fd;">
         <input type="checkbox" id="corsProxyThumbChk" checked> Gunakan proxy gambar (<code class="inline">wsrv.nl</code>) otomatis jika URL kolom <code class="inline">Thumbnail</code> kena CORS
       </label>
 
+      <label class="checkbox-lbl" id="autoSkip429ThumbWrap" style="display:flex;margin-bottom:12px;color:#86efac;">
+        <input type="checkbox" id="autoSkip429ThumbChk" checked> Otomatis lewati <code class="inline">thumbnails.set</code> pada channel yang sudah kena limit 429 (langsung pakai Banner Channel, hemat kuota &amp; waktu)
+      </label>
+
       <div class="preview-assets" id="assetPreview"></div>
+
+      <!-- PANEL BANNER IMAGE CHANNEL (SOLUSI ANTI 429 THUMBNAIL) -->
+      <div style="margin-top:18px;padding:14px;background:var(--bg);border:1px solid rgba(245,158,11,.35);border-radius:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:700;color:#fcd34d;">&#127912; Banner Image Channel (Solusi Anti Rate Limit 429)</div>
+          <span class="tag-pill">2048 &times; 1152 &bull; &le; 6 MB &bull; API</span>
+        </div>
+        <div class="small" style="color:var(--muted);line-height:1.6;margin-bottom:12px;">
+          Saat <code class="inline">thumbnails.set</code> kena <b>rate limit (429)</b>, YouTube otomatis memakai <b>Banner Image Channel</b> sebagai thumbnail default jadwal live.
+          Ubah Banner Channel langsung via YouTube Data API v3 (<code class="inline">channelBanners.insert</code> + <code class="inline">channels.update</code>, <b>tanpa buka YouTube Studio</b>), otomatis di-resize ke <b>2048&times;1152 JPEG (&le; 6 MB)</b>.
+          Jika kolom file banner di bawah kosong, otomatis memakai <b>gambar #1 dari Bagian 3</b>.
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;">
+          <div>
+            <label for="bannerAccountSelect">Target Brand Account / Channel</label>
+            <select id="bannerAccountSelect"></select>
+          </div>
+          <div>
+            <label>Pilih Gambar Banner Khusus (opsional)</label>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-ghost" id="pickBannerImgBtn" style="flex:1;padding:10px 12px;font-size:12px;">Pilih Gambar Banner</button>
+              <button class="btn-ghost" id="clearBannerImgBtn" style="display:none;padding:10px 12px;font-size:12px;">Reset</button>
+              <input type="file" id="bannerFileInput" accept="image/png,image/jpeg,image/webp" style="display:none;">
+            </div>
+            <div class="small" id="bannerFileLabel" style="color:var(--muted);margin-top:4px;">Default: pakai gambar #1 dari Bagian 3</div>
+          </div>
+        </div>
+
+        <label class="checkbox-lbl" style="margin-bottom:10px;color:#fcd34d;">
+          <input type="checkbox" id="bannerDisableThumbSetChk" checked> Setelah Banner berhasil diubah, otomatis matikan centang <code class="inline">thumbnails.set</code> di atas (bebas 429 &amp; hemat 50 unit/event)
+        </label>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-white" id="applyBannerBtn" style="flex:1;min-width:180px;">&#128444; Change Banner (2048&times;1152 via API)</button>
+          <button class="btn-ghost" id="removeBannerBtn" style="min-width:140px;color:#fca5a5;">&#128465; Remove Banner</button>
+          <a id="openStudioProfileLink" href="https://studio.youtube.com/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;padding:11px 14px;border-radius:12px;background:var(--border);color:#93c5fd;font-size:12px;font-weight:600;text-decoration:none;">Buka Profile Studio &#8599;</a>
+        </div>
+        <div id="bannerPreviewWrap" style="display:none;margin-top:10px;align-items:center;gap:12px;flex-wrap:wrap;">
+          <img id="bannerPreviewImg" class="gen-preview" style="width:192px;height:108px;" alt="Banner Preview">
+          <div class="small" id="bannerStatusText" style="color:var(--muted);"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -400,7 +456,7 @@
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
             <button class="btn-ghost" id="exportKeysBtn" style="flex:1;min-width:200px;">&#128273; Unduh Stream Key (CSV)</button>
-            <button class="btn-ghost" id="exportPinScriptBtn" style="flex:1;min-width:200px;color:#fcd34d;">&#128204; Unduh Script Auto-Pin Chat (.py)</button>
+            <button class="btn-ghost" id="exportPinScriptBtn" style="flex:1;min-width:200px;color:#fcd34d;">&#128204; Unduh Script Kirim 3x &amp; Pin Chat (.py)</button>
           </div>
           <div class="small" style="color:var(--muted);margin-top:6px;">
             <b>Info Pin Chat:</b> YouTube Data API v3 resmi mendukung kirim chat (<code class="inline">liveChat/messages</code>), tetapi <b>belum menyediakan endpoint publik untuk Pin Chat</b>. Gunakan tombol <b>&#128204; Pin Chat</b> di tiap baris tabel atau unduh <b>Script Auto-Pin Chat (.py Playwright)</b> untuk pin otomatis lewat profil Chrome lokal (otomatis skip jika sudah di-pin, pin jika chat sudah ada, atau kirim+pin jika masih kosong).
@@ -555,6 +611,105 @@
   </div>
   <!-- /playlistWrap -->
 
+  <!-- SECTION PIN CHAT 3X (mode Pin Chat) -->
+  <div id="pinChatWrap" style="display:none;">
+  <section>
+    <div class="sec-head">
+      <div class="sec-head-left"><div class="num-badge">&#128204;</div><h2>Khusus Kirim Chat 3x &amp; Pin Chat</h2></div>
+      <span class="tag-pill" id="pcCountPill">0 event</span>
+    </div>
+    <div class="sec-body">
+      <div class="note-box" style="margin-bottom:14px;">
+        <b>Alur Khusus Kirim 3x + Pin Chat (Brand Account tanpa buka YouTube Studio):</b><br>
+        &bull; <b>Kirim 3x via API (di sini):</b> langsung menembak <code class="inline">liveChat/messages</code> sebanyak <b>3 kali</b> per jadwal (jeda otomatis &amp; retry 404/429) lewat token OAuth Brand Account.<br>
+        &bull; <b>Pin Chat Otomatis:</b> karena YouTube Data API v3 belum menyediakan endpoint Pin publik, klik tombol <b>&#128204; Unduh Script Auto-Pin 3x (.py)</b> untuk menjalankan Playwright langsung di halaman popout <code class="inline">youtube.com/live_chat?v=...&amp;is_popout=1</code> (sudah di-pin &rarr; skip; chat sudah ada &rarr; langsung pin; belum ada chat &rarr; kirim 3x lalu pin; otomatis retry sampai ter-pin).
+      </div>
+
+      <div class="field">
+        <label>Akun YouTube / Brand Account (pengirim chat via API)</label>
+        <select id="pcAccountSelect" style="width:100%;"></select>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label>1. Sumber Daftar Event Live</label>
+        <input type="file" id="pcCsvFileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-white" id="pcLoadFromLiveBtn" style="flex:1;min-width:170px;">&#8635; Ambil dari Hasil Live Sesi Ini</button>
+          <button class="btn-ghost" id="pcPickFileBtn" style="flex:1;min-width:160px;">&#8593; Import CSV / Excel</button>
+          <button class="btn-ghost" id="pcClearBtn" style="flex-shrink:0;display:none;">Hapus Daftar</button>
+        </div>
+        <div class="small" style="color:var(--muted);margin-top:6px;">
+          Mendukung file <code class="inline">live-chat-ids-*.csv</code>, <code class="inline">hasil-upload-*.csv</code>, atau CSV 32 kolom (<code class="inline">videoId</code> / <code class="inline">link_watch</code> + <code class="inline">isi_chatt</code>).
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label>Atau Tempel Link / Video ID Manual (1 per baris &mdash; opsional tambah <code class="inline">| pesan khusus</code>)</label>
+        <textarea id="pcVideoListInput" rows="5" style="width:100%;padding:10px;font-family:monospace;font-size:12px;" placeholder="https://www.youtube.com/watch?v=cxB34a68Wdo&#10;ljqmtLsv9Kw | Selamat datang di live match!&#10;https://www.youtube.com/live/Upuidu7CK9g"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+          <span class="small" style="color:var(--muted);" id="pcManualCountLabel">0 link/ID manual</span>
+          <button class="btn-ghost" id="pcAddManualBtn" style="padding:7px 12px;font-size:11.5px;">+ Masukkan ke Daftar Target</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label>2. Pesan Default (<code class="inline">Isi_Chatt</code> jika baris tidak punya pesan khusus)</label>
+        <textarea id="pcDefaultMsgInput" rows="2" style="width:100%;padding:10px;" placeholder="Selamat datang di live streaming! Jangan lupa like &amp; subscribe."></textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div>
+          <label for="pcRepeatInput">Jumlah Kirim per Event</label>
+          <input type="text" id="pcRepeatInput" value="3">
+        </div>
+        <div>
+          <label for="pcDelayInput">Jeda Antar Kirim (detik)</label>
+          <input type="text" id="pcDelayInput" value="2.5">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:6px;">
+          <label class="checkbox-lbl" style="margin:0;">
+            <input type="checkbox" id="pcSkipPinnedChk" checked> Skip jika sudah di-pin (.py)
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn-primary" id="pcSendApiBtn" style="flex:1;min-width:210px;">&#128172; KIRIM CHAT 3X VIA API</button>
+        <button class="btn-ghost" id="pcStopBtn" style="display:none;color:#ff6b6b;">&#9632; Stop</button>
+        <button class="btn-white" id="pcExportScriptBtn" style="flex:1;min-width:210px;">&#128204; UNDUH SCRIPT AUTO-PIN 3X (.PY)</button>
+      </div>
+
+      <div style="margin-top:14px;display:none;" id="pcProgressWrap">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
+          <span id="pcProgressTitle">Progress kirim chat 3x...</span><span class="mono" id="pcProgressLabel">0/0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="pcProgressFill"></div></div>
+      </div>
+
+      <div id="pcRowsWrap" style="margin-top:14px;display:none;">
+        <div class="table-wrap" style="max-height:360px;">
+          <table>
+            <thead><tr><th>Event &amp; Pesan (<code class="inline">Isi_Chatt</code>)</th><th>Status Kirim</th><th>Pin Chat</th></tr></thead>
+            <tbody id="pcRowsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="log-box" style="margin-top:14px;">
+        <div class="log-head">
+          <span>Log Output Pin Chat (3x)</span>
+          <span style="display:flex;gap:14px;">
+            <button class="clear-btn" id="downloadLogBtn3">Unduh Log</button>
+            <button class="clear-btn" id="clearLogBtn3">Clear</button>
+          </span>
+        </div>
+        <div class="log-body" id="logBody3"></div>
+      </div>
+    </div>
+  </section>
+  </div>
+  <!-- /pinChatWrap -->
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -688,7 +843,7 @@
     return mode === "live" ? Math.floor(COST.DAILY_UNITS / LIVE_EVENT_COST) : COST.VIDEO_BUCKET;   // 66 vs 100
   }
   var LS_MODE = "yt_csv_mode";
-  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return m === "live" ? "live" : (m === "playlist" ? "playlist" : "video"); } catch (e){ return "video"; } })();
+  var appMode = (function(){ try { var m = localStorage.getItem("yt_csv_mode"); return (m === "live" || m === "playlist" || m === "pinchat") ? m : "video"; } catch (e){ return "video"; } })();
   // Default "Limit/akun" mengikuti kuota harian per Client ID sesuai mode: 66 (live) / 100 (video).
   // saveState/restoreState di bawah bisa menimpa ini kalau ada sesi tersimpan (dan mematikan limitAutoManaged).
   limitPerAccount = eventsPerDayPerClient(appMode);
@@ -714,8 +869,35 @@
     modeVideoBtn: document.getElementById("modeVideoBtn"),
     modeLiveBtn: document.getElementById("modeLiveBtn"),
     modePlaylistBtn: document.getElementById("modePlaylistBtn"),
+    modePinChatBtn: document.getElementById("modePinChatBtn"),
     videoLiveWrap: document.getElementById("videoLiveWrap"),
     playlistWrap: document.getElementById("playlistWrap"),
+    pinChatWrap: document.getElementById("pinChatWrap"),
+    pcCountPill: document.getElementById("pcCountPill"),
+    pcAccountSelect: document.getElementById("pcAccountSelect"),
+    pcCsvFileInput: document.getElementById("pcCsvFileInput"),
+    pcLoadFromLiveBtn: document.getElementById("pcLoadFromLiveBtn"),
+    pcPickFileBtn: document.getElementById("pcPickFileBtn"),
+    pcClearBtn: document.getElementById("pcClearBtn"),
+    pcVideoListInput: document.getElementById("pcVideoListInput"),
+    pcManualCountLabel: document.getElementById("pcManualCountLabel"),
+    pcAddManualBtn: document.getElementById("pcAddManualBtn"),
+    pcDefaultMsgInput: document.getElementById("pcDefaultMsgInput"),
+    pcRepeatInput: document.getElementById("pcRepeatInput"),
+    pcDelayInput: document.getElementById("pcDelayInput"),
+    pcSkipPinnedChk: document.getElementById("pcSkipPinnedChk"),
+    pcSendApiBtn: document.getElementById("pcSendApiBtn"),
+    pcStopBtn: document.getElementById("pcStopBtn"),
+    pcExportScriptBtn: document.getElementById("pcExportScriptBtn"),
+    pcProgressWrap: document.getElementById("pcProgressWrap"),
+    pcProgressTitle: document.getElementById("pcProgressTitle"),
+    pcProgressLabel: document.getElementById("pcProgressLabel"),
+    pcProgressFill: document.getElementById("pcProgressFill"),
+    pcRowsWrap: document.getElementById("pcRowsWrap"),
+    pcRowsTable: document.getElementById("pcRowsTable"),
+    logBody3: document.getElementById("logBody3"),
+    clearLogBtn3: document.getElementById("clearLogBtn3"),
+    downloadLogBtn3: document.getElementById("downloadLogBtn3"),
     plAccountSelect: document.getElementById("plAccountSelect"),
     plCsvFileInput: document.getElementById("plCsvFileInput"),
     plPickFileBtn: document.getElementById("plPickFileBtn"),
@@ -756,6 +938,7 @@
     warnBox: document.getElementById("warnBox"),
     newFormatPrivacy: document.getElementById("newFormatPrivacy"),
     defaultTzSelect: document.getElementById("defaultTzSelect"),
+    liveChatRepeatSelect: document.getElementById("liveChatRepeatSelect"),
     previewTableWrap: document.getElementById("previewTableWrap"),
     previewTableBody: document.getElementById("previewTableBody"),
 
@@ -768,6 +951,19 @@
     liveThumbWrap: document.getElementById("liveThumbWrap"),
     liveThumbChk: document.getElementById("liveThumbChk"),
     corsProxyThumbChk: document.getElementById("corsProxyThumbChk"),
+    autoSkip429ThumbChk: document.getElementById("autoSkip429ThumbChk"),
+    bannerAccountSelect: document.getElementById("bannerAccountSelect"),
+    pickBannerImgBtn: document.getElementById("pickBannerImgBtn"),
+    clearBannerImgBtn: document.getElementById("clearBannerImgBtn"),
+    bannerFileInput: document.getElementById("bannerFileInput"),
+    bannerFileLabel: document.getElementById("bannerFileLabel"),
+    bannerDisableThumbSetChk: document.getElementById("bannerDisableThumbSetChk"),
+    applyBannerBtn: document.getElementById("applyBannerBtn"),
+    removeBannerBtn: document.getElementById("removeBannerBtn"),
+    openStudioProfileLink: document.getElementById("openStudioProfileLink"),
+    bannerPreviewWrap: document.getElementById("bannerPreviewWrap"),
+    bannerPreviewImg: document.getElementById("bannerPreviewImg"),
+    bannerStatusText: document.getElementById("bannerStatusText"),
     imgModePill: document.getElementById("imgModePill"),
     assetPreview: document.getElementById("assetPreview"),
 
@@ -850,24 +1046,31 @@
   function applyModeUi(){
     var live = appMode === "live";
     var playlist = appMode === "playlist";
-    el.modeVideoBtn.className = (!live && !playlist) ? "btn-white" : "btn-ghost";
+    var pinchat = appMode === "pinchat";
+    el.modeVideoBtn.className = (!live && !playlist && !pinchat) ? "btn-white" : "btn-ghost";
     el.modeLiveBtn.className = live ? "btn-white" : "btn-ghost";
     el.modePlaylistBtn.className = playlist ? "btn-white" : "btn-ghost";
-    el.videoLiveWrap.style.display = playlist ? "none" : "";
+    if (el.modePinChatBtn) el.modePinChatBtn.className = pinchat ? "btn-white" : "btn-ghost";
+    el.videoLiveWrap.style.display = (playlist || pinchat) ? "none" : "";
     el.playlistWrap.style.display = playlist ? "" : "none";
+    if (el.pinChatWrap) el.pinChatWrap.style.display = pinchat ? "" : "none";
     if (playlist){
       renderPlaylistAccountSelect();
       el.modeNote.innerHTML = '<b>Mode Playlist.</b> Bikin playlist baru di channel kamu lalu isi dengan video &mdash; video kamu sendiri atau video publik orang lain yang sejenis. ' +
         'Scroll ke bawah ke card <b>&ldquo;Bikin / Isi Playlist&rdquo;</b> untuk pilih akun, isi judul playlist, cari video by kata kunci, atau tempel link video manual.';
       return;
     }
+    if (pinchat){
+      renderPinChatAccountSelect();
+      el.modeNote.innerHTML = '<b>Mode Khusus Pin Chat (3x).</b> Mengirim pesan <b>3 kali berturut-turut</b> ke Live Chat setiap event via API Brand Account, plus tombol <b>Pin Chat</b> 1-klik &amp; generator <b>Script Auto-Pin 3x (.py Playwright)</b> tanpa membuka YouTube Studio.';
+      return;
+    }
     el.modeNote.innerHTML = live
-      ? '<b>Mode Jadwal Live.</b> Yang dibuat adalah <b>halaman event live terjadwal</b> (judul, deskripsi, tag, thumbnail), <b>bukan video</b>. Tidak ada yang tayang otomatis: konten baru ada kalau kamu benar-benar siaran. ' +
-        'Biaya per event <b>150 unit</b> (jadwal 50 + thumbnail 50 + tag 50) &asymp; <b>' + eventsPerDayPerClient("live") + ' event/hari per Client ID</b>. ' +
-        '<b>Syarat:</b> live streaming harus <b>aktif</b> di channel (verifikasi telepon, aktivasi pertama bisa sampai 24 jam) dan channel harus terverifikasi untuk thumbnail. ' +
-        'Jadwal harus di masa depan dan &ldquo;cukup dekat&rdquo; (batas Google tidak dipublikasikan, kalau ditolak coba tanggal lebih dekat). Render video tidak dipakai.'
+      ? '<b>Mode Jadwal Live.</b> Yang dibuat adalah <b>halaman event live terjadwal</b> (judul, deskripsi, tag, thumbnail, stream, playlist, &amp; kirim chat 3x), <b>bukan video</b>. ' +
+        'Biaya dasar per event <b>150 unit</b> (jadwal 50 + thumbnail 50 + tag 50) &asymp; <b>' + eventsPerDayPerClient("live") + ' event/hari per Client ID</b>. ' +
+        '<b>Syarat:</b> live streaming harus <b>aktif</b> di Brand Channel dan channel terverifikasi untuk thumbnail.'
       : '<b>Mode Upload Video.</b> Tiap event di-render jadi video WebM 5 detik lalu diupload. Kuota: <b>' + eventsPerDayPerClient("video") + ' upload/hari per Client ID</b> (bucket sendiri, 1 unit/upload). ' +
-        'Tidak butuh live streaming aktif dan tidak butuh thumbnail terpisah.';
+        'Catatan: Project Cloud status Testing akan mengunci hasil videos.insert sebagai private; untuk jadwal langsung tayang publik gunakan Mode Jadwal Live.';
     if (el.liveThumbWrap) el.liveThumbWrap.style.display = "flex";
     var pill = document.getElementById("imgModePill");
     if (pill) pill.textContent = (userImages.length ? "Mode: gambar upload (" + userImages.length + ")" : "Mode: desain otomatis") + (live ? " (thumbnail)" : " (video)");
@@ -876,11 +1079,12 @@
   function setMode(m){
     if (running){ showToast("Tunggu proses selesai dulu"); return; }
     if (plRunning){ showToast("Tunggu proses playlist selesai dulu"); return; }
+    if (pcRunning){ showToast("Tunggu proses kirim chat selesai dulu"); return; }
     if (m === appMode) return;
     appMode = m;
     lsSetRaw(LS_MODE, m);
-    if (m === "playlist"){
-      log("Mode diganti ke: Playlist.", "info");
+    if (m === "playlist" || m === "pinchat"){
+      log("Mode diganti ke: " + (m === "playlist" ? "Playlist" : "Pin Chat (3x)") + ".", "info");
       applyModeUi();
       updateGeneralUi();
       return;
@@ -1758,7 +1962,7 @@
   // ================= EKSPOR ID / LINK / CHANNEL =================
   function watchUrl(id){ return "https://www.youtube.com/watch?v=" + encodeURIComponent(id); }
   function studioUrl(id, mode){ return "https://studio.youtube.com/video/" + encodeURIComponent(id) + (mode === "live" ? "/livestreaming" : "/edit"); }
-  function liveChatUrl(id){ return "https://www.youtube.com/live_chat?v=" + encodeURIComponent(id); }
+  function liveChatUrl(id){ return "https://www.youtube.com/live_chat?v=" + encodeURIComponent(id) + "&is_popout=1"; }
   function playlistUrl(id){ return "https://www.youtube.com/playlist?list=" + encodeURIComponent(id); }
   // Sel CSV: quote kalau perlu, dan netralkan awalan = + - @ supaya tidak dibaca Excel sebagai rumus.
   function csvCell(v){
@@ -1799,7 +2003,192 @@
   }
   var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "link_live_chat", "channel", "channel_id", "playlist", "nama_stream", "stream_key", "live_chat_id", "chat_message_id", "isi_chatt", "chat_status", "pin_status", "dibuat_pada"];
 
-  // Unduh script Python Playwright siap jalan untuk Auto-Pin Live Chat (kondisional: skip jika sudah di-pin, pin jika chat ada, kirim+pin jika kosong)
+  // Generator script Python Playwright Kirim 3x + Pin Chat (dipakai bersama oleh Mode Jadwal Live & Mode Khusus Pin Chat 3x)
+  function buildAutoPin3xPython(items, repeatCount, delaySec, skipIfPinned, defaultMsg){
+    var nKirim = Math.max(1, parseInt(repeatCount, 10) || 3);
+    var jedaKirim = Math.max(0.5, parseFloat(delaySec) || 2.5);
+    var skipFlag = skipIfPinned === false ? "False" : "True";
+    var defMsgJson = JSON.stringify(String(defaultMsg || ""));
+    return [
+      '# Auto Kirim Chat 3x & Pin Chat YouTube (Playwright - Chrome Persistent Profile)',
+      '# Dihasilkan otomatis oleh YouTube Jhony Auto Tools.',
+      '# Alur kondisional per jadwal:',
+      '#   1. Sudah ada pesan ter-pin -> SKIP (tidak mengklik titik tiga lagi)',
+      '#   2. Pesan sudah terkirim -> langsung PIN (retry sampai berhasil pin)',
+      '#   3. Belum ada / kurang dari ' + nKirim + ' pesan -> kirim kekurangannya hingga ' + nKirim + 'x lalu PIN',
+      '#',
+      '# Instalasi (sekali saja):',
+      '#   pip install playwright',
+      '#   playwright install chromium',
+      '# Jalankan:',
+      '#   python auto_pin_chat_3x.py',
+      'import re',
+      'import time',
+      'from playwright.sync_api import sync_playwright',
+      '',
+      '# Folder profil Chrome yang sudah login ke Brand Account / Gmail Manager',
+      'USER_DATA_DIR = r"./chrome_profile_yt"',
+      '# Opsional: isi path chrome.exe (mis. Chrome Portable) atau biarkan None untuk Chromium bawaan Playwright',
+      'CHROME_EXECUTABLE = None',
+      'HEADLESS = False',
+      '# True = buka youtube.com/channel_switcher dulu agar bisa pastikan Brand Account aktif',
+      'KONFIRMASI_BRAND_AWAL = True',
+      '',
+      'JUMLAH_KIRIM = ' + nKirim,
+      'JEDA_ANTAR_KIRIM = ' + jedaKirim,
+      'JEDA_ANTAR_EVENT = 2.0',
+      'SKIP_JIKA_SUDAH_PIN = ' + skipFlag,
+      'MAX_RETRY_PIN = 3',
+      'DEFAULT_PESAN = ' + defMsgJson,
+      '',
+      'EVENTS = ' + JSON.stringify(items, null, 2),
+      '',
+      'def is_already_pinned(page):',
+      '    pinned = page.locator("yt-live-chat-banner-manager yt-live-chat-banner-renderer")',
+      '    return pinned.count() > 0 and pinned.first.is_visible()',
+      '',
+      'def find_pin_menu_item(page):',
+      '    for kw in ("Pin message", "Sematkan pesan", "Pin", "Sematkan"):',
+      '        loc = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item, yt-list-item-view-model").filter(has_text=kw)',
+      '        if loc.count() > 0 and loc.first.is_visible():',
+      '            return loc.first',
+      '    return None',
+      '',
+      'def kirim_pesan_satu_kali(page, msg):',
+      '    clean_msg = re.sub(r"\\s+", " ", msg).strip()[:200]',
+      '    box = page.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
+      '    if box.count() == 0 or not box.is_visible():',
+      '        return False',
+      '    box.click()',
+      '    box.fill("")',
+      '    page.keyboard.insert_text(clean_msg)',
+      '    page.wait_for_timeout(400)',
+      '    send_btn = page.locator("yt-button-renderer#send-button button, #send-button button").first',
+      '    if send_btn.count() > 0 and send_btn.is_visible():',
+      '        try:',
+      '            send_btn.click(timeout=4000)',
+      '        except Exception:',
+      '            page.keyboard.press("Enter")',
+      '    else:',
+      '        page.keyboard.press("Enter")',
+      '    return True',
+      '',
+      'def proses_event(page, item, idx, total):',
+      '    vid = item["video_id"]',
+      '    msg = (item.get("isi_chatt") or DEFAULT_PESAN).strip()',
+      '    url = f"https://www.youtube.com/live_chat?v={vid}&is_popout=1"',
+      '    print(f"\\n[{idx}/{total}] >>> [{vid}] {item.get(\'title\')}")',
+      '    page.goto(url, wait_until="domcontentloaded", timeout=45000)',
+      '    page.wait_for_timeout(4500)',
+      '',
+      '    # 1. Cek apakah sudah ada pesan yang di-pin -> langsung SKIP',
+      '    if SKIP_JIKA_SUDAH_PIN and is_already_pinned(page):',
+      '        print("  [SKIP] Chat sudah ada dan sudah di-PIN.")',
+      '        return "skip"',
+      '',
+      '    # 2. Hitung pesan yang cocok; kirim kekurangannya hingga JUMLAH_KIRIM (3x)',
+      '    msgs = page.locator("yt-live-chat-text-message-renderer")',
+      '    kunci = re.sub(r"\\s+", " ", msg).strip()[:25].lower()',
+      '    sudah_ada = 0',
+      '    for i in range(msgs.count()):',
+      '        txt = (msgs.nth(i).inner_text() or "").lower()',
+      '        if not kunci or kunci in txt:',
+      '            sudah_ada += 1',
+      '',
+      '    sisa_kirim = max(0, JUMLAH_KIRIM - sudah_ada) if msg else 0',
+      '    if sisa_kirim > 0:',
+      '        box = page.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
+      '        if box.count() == 0 or not box.is_visible():',
+      '            print("  [GAGAL] Kolom chat tidak muncul (pastikan sudah login & pilih Brand Account pemilik channel).")',
+      '            return "fail"',
+      '        for ke in range(1, sisa_kirim + 1):',
+      '            if not kirim_pesan_satu_kali(page, msg):',
+      '                print(f"  [GAGAL] Tidak bisa mengisi pesan ke-{sudah_ada + ke}.")',
+      '                break',
+      '            print(f"  [KIRIM {sudah_ada + ke}/{JUMLAH_KIRIM}] {msg[:65]}")',
+      '            page.wait_for_timeout(int(JEDA_ANTAR_KIRIM * 1000))',
+      '        page.wait_for_timeout(2000)',
+      '    elif sudah_ada > 0:',
+      '        print(f"  [INFO] Sudah ada {sudah_ada} pesan di chat, langsung lanjut PIN.")',
+      '',
+      '    # 3. Pin pesan terakhir dengan retry otomatis sampai banner pinned muncul',
+      '    for attempt in range(1, MAX_RETRY_PIN + 1):',
+      '        if is_already_pinned(page):',
+      '            print("  [OK] Pesan sudah ter-PIN!")',
+      '            return "pinned"',
+      '',
+      '        target = None',
+      '        count = msgs.count()',
+      '        for i in range(count - 1, -1, -1):',
+      '            m = msgs.nth(i)',
+      '            if not kunci or kunci in (m.inner_text() or "").lower():',
+      '                target = m',
+      '                break',
+      '        if target is None and count > 0:',
+      '            target = msgs.last',
+      '        if target is None:',
+      '            print("  [GAGAL] Tidak ada pesan chat untuk di-pin.")',
+      '            return "fail"',
+      '',
+      '        target.scroll_into_view_if_needed()',
+      '        target.hover()',
+      '        page.wait_for_timeout(500)',
+      '        menu_btn = target.locator("#menu-button button, yt-icon-button#menu-button").first',
+      '        try:',
+      '            menu_btn.click(force=True, timeout=5000)',
+      '        except Exception:',
+      '            menu_btn.evaluate("el => el.click()")',
+      '        page.wait_for_timeout(700)',
+      '',
+      '        pin_item = find_pin_menu_item(page)',
+      '        if pin_item is not None:',
+      '            pin_item.click()',
+      '            page.wait_for_timeout(900)',
+      '            for ckw in ("Pin", "Sematkan"):',
+      '                confirm = page.locator(f"yt-confirm-dialog-renderer #confirm-button button, tp-yt-paper-dialog button:has-text(\'{ckw}\')")',
+      '                if confirm.count() > 0 and confirm.last.is_visible():',
+      '                    confirm.last.click()',
+      '                    page.wait_for_timeout(900)',
+      '                    break',
+      '            page.wait_for_timeout(1200)',
+      '            if is_already_pinned(page):',
+      '                print(f"  [OK] Pesan BERHASIL di-PIN (percobaan {attempt})!")',
+      '                return "pinned"',
+      '        print(f"  [RETRY PIN {attempt}/{MAX_RETRY_PIN}] Belum terdeteksi ter-pin, mencoba lagi...")',
+      '        page.wait_for_timeout(1800)',
+      '',
+      '    print("  [GAGAL] Gagal pin setelah beberapa percobaan (pastikan Brand Account aktif adalah pemilik channel).")',
+      '    return "fail"',
+      '',
+      'def main():',
+      '    stats = {"pinned": 0, "skip": 0, "fail": 0}',
+      '    with sync_playwright() as p:',
+      '        launch_opts = dict(user_data_dir=USER_DATA_DIR, headless=HEADLESS)',
+      '        if CHROME_EXECUTABLE:',
+      '            launch_opts["executable_path"] = CHROME_EXECUTABLE',
+      '        ctx = p.chromium.launch_persistent_context(**launch_opts)',
+      '        page = ctx.pages[0] if ctx.pages else ctx.new_page()',
+      '        if KONFIRMASI_BRAND_AWAL:',
+      '            page.goto("https://www.youtube.com/channel_switcher", wait_until="domcontentloaded")',
+      '            input("\\nPastikan sudah login & klik Brand Account pemilik event, lalu tekan ENTER untuk mulai Kirim 3x + Pin... ")',
+      '        total = len(EVENTS)',
+      '        for idx, item in enumerate(EVENTS, 1):',
+      '            try:',
+      '                res = proses_event(page, item, idx, total)',
+      '                stats[res] = stats.get(res, 0) + 1',
+      '            except Exception as e:',
+      '                print(f"  [ERROR] {item[\'video_id\']}: {e}")',
+      '                stats["fail"] += 1',
+      '            time.sleep(JEDA_ANTAR_EVENT)',
+      '        print(f"\\nSelesai! Pinned: {stats[\'pinned\']} | Skip: {stats[\'skip\']} | Gagal: {stats[\'fail\']}")',
+      '        ctx.close()',
+      '',
+      'if __name__ == "__main__":',
+      '    main()',
+      ''
+    ].join("\n");
+  }
+
   function exportAutoPinScript(){
     var list = doneRows(true).filter(function(r){ return !!r.chatMessage; });
     if (!list.length){
@@ -1812,114 +2201,21 @@
         title: r.title || "",
         isi_chatt: r.chatMessage || "",
         channel_id: r.channelId || "",
-        chat_sent: !!r.chatSent
+        channel_title: r.channelTitle || r.uploadedVia || "",
+        chat_sent_count: r.chatSentCount || (r.chatSent ? 1 : 0)
       };
     });
-    var py = [
-      '# Auto Pin Live Chat YouTube (Playwright - Chrome Persistent Profile)',
-      '# Dihasilkan otomatis oleh YouTube Jhony Auto Tools.',
-      '# Alur kondisional per jadwal:',
-      '#   1. Sudah ada pinned chat -> SKIP',
-      '#   2. Chat sudah terkirim via API tapi belum di-pin -> langsung PIN',
-      '#   3. Belum ada chat -> isi Isi_Chatt, kirim, lalu PIN',
-      '# Jalankan: pip install playwright && playwright install chromium',
-      '# Lalu:     python auto_pin_chat.py',
-      'import time',
-      'from playwright.sync_api import sync_playwright',
-      '',
-      '# Ganti ke folder profil Chrome yang sudah login ke Brand Account Anda',
-      'USER_DATA_DIR = r"./chrome_profile_yt"',
-      'HEADLESS = False',
-      '',
-      'EVENTS = ' + JSON.stringify(items, null, 2),
-      '',
-      'def pin_live_chat_for_event(page, item):',
-      '    vid = item["video_id"]',
-      '    msg = (item.get("isi_chatt") or "").strip()',
-      '    url = f"https://www.youtube.com/live_chat?v={vid}"',
-      '    print(f"\\n>>> Membuka Live Chat: {item.get(\'title\')} ({vid})")',
-      '    page.goto(url, wait_until="domcontentloaded", timeout=45000)',
-      '    page.wait_for_timeout(4000)',
-      '',
-      '    # 1. Cek apakah sudah ada pesan yang di-pin',
-      '    pinned = page.locator("yt-live-chat-banner-manager yt-live-chat-banner-renderer")',
-      '    if pinned.count() > 0 and pinned.first.is_visible():',
-      '        print("  [SKIP] Chat sudah ada dan sudah di-pin.")',
-      '        return',
-      '',
-      '    # 2. Cari pesan yang sudah terkirim; jika belum ada & isi_chatt terisi -> kirim dulu',
-      '    msgs = page.locator("yt-live-chat-text-message-renderer")',
-      '    if msgs.count() == 0 and msg:',
-      '        box = page.locator("div#input[contenteditable=\'true\']").first',
-      '        if box.is_visible():',
-      '            box.click()',
-      '            box.fill(msg)',
-      '            page.wait_for_timeout(400)',
-      '            page.locator("yt-button-renderer#send-button button, #send-button button").first.click()',
-      '            print("  [KIRIM] Pesan awal dikirim ke Live Chat.")',
-      '            page.wait_for_timeout(3000)',
-      '        else:',
-      '            print("  [GAGAL] Kolom input chat tidak ditemukan (pastikan sudah login & switch ke Brand Account).")',
-      '            return',
-      '',
-      '    # 3. Pin pesan terakhir / pesan yang cocok dengan isi_chatt',
-      '    target = None',
-      '    count = msgs.count()',
-      '    for i in range(count - 1, -1, -1):',
-      '        m = msgs.nth(i)',
-      '        if not msg or msg[:25].lower() in (m.inner_text() or "").lower():',
-      '            target = m',
-      '            break',
-      '    if target is None and count > 0:',
-      '        target = msgs.last',
-      '    if target is None:',
-      '        print("  [SKIP] Tidak ada pesan chat untuk di-pin.")',
-      '        return',
-      '',
-      '    target.hover()',
-      '    page.wait_for_timeout(400)',
-      '    menu_btn = target.locator("#menu-button button, yt-icon-button#menu-button").first',
-      '    menu_btn.click()',
-      '    page.wait_for_timeout(600)',
-      '    pin_item = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item").filter(has_text="Pin").first',
-      '    if pin_item.count() == 0:',
-      '        pin_item = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item").filter(has_text="Sematkan").first',
-      '    if pin_item.count() > 0:',
-      '        pin_item.click()',
-      '        page.wait_for_timeout(800)',
-      '        confirm = page.locator("yt-confirm-dialog-renderer #confirm-button button, button:has-text(\'Pin\'), button:has-text(\'Sematkan\')").last',
-      '        if confirm.is_visible():',
-      '            confirm.click()',
-      '            page.wait_for_timeout(800)',
-      '        print("  [OK] Pesan berhasil di-PIN!")',
-      '    else:',
-      '        print("  [PERINGATAN] Tombol Pin/Sematkan tidak muncul (pastikan profil Chrome aktif di Brand Account pemilik channel).")',
-      '',
-      'def main():',
-      '    with sync_playwright() as p:',
-      '        ctx = p.chromium.launch_persistent_context(USER_DATA_DIR, headless=HEADLESS)',
-      '        page = ctx.pages[0] if ctx.pages else ctx.new_page()',
-      '        for item in EVENTS:',
-      '            try:',
-      '                pin_live_chat_for_event(page, item)',
-      '            except Exception as e:',
-      '                print(f"  [ERROR] {item[\'video_id\']}: {e}")',
-      '            time.sleep(1.5)',
-      '        print("\\nSelesai memproses semua event.")',
-      '        ctx.close()',
-      '',
-      'if __name__ == "__main__":',
-      '    main()',
-      ''
-    ].join("\n");
+    var repeatCnt = (el.liveChatRepeatSelect && parseInt(el.liveChatRepeatSelect.value, 10)) || 3;
+    if (repeatCnt < 1) repeatCnt = 3;
+    var py = buildAutoPin3xPython(items, repeatCnt, 2.5, true, "");
     var blob = new Blob([py], { type: "text/x-python;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = "auto_pin_chat-" + todayStamp() + ".py";
+    a.href = url; a.download = "auto_pin_chat_3x-" + todayStamp() + ".py";
     document.body.appendChild(a); a.click();
     setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
-    log("Diunduh script Auto-Pin Chat (Playwright) untuk " + list.length + " event live.", "success");
-    showToast("Script auto_pin_chat.py diunduh");
+    log("Diunduh script Auto-Pin Chat " + repeatCnt + "x (Playwright) untuk " + list.length + " event live.", "success");
+    showToast("Script auto_pin_chat_3x.py diunduh");
   }
 
   function exportEvents(onlyLive){
@@ -2156,7 +2452,7 @@
       else if (r.status === "sukses") statusHtml = '<div><span class="status-tag sukses">Sukses</span>' +
         (r.videoId ? '<div class="mono" style="font-size:10px;color:var(--muted);margin-top:3px;"><a href="' + watchUrl(r.videoId) + '" target="_blank" rel="noopener" style="color:#93c5fd;">' + escapeHtml(r.videoId) + '</a></div>' : '') +
         (r.mode === "live" ? '<div style="font-size:10px;color:#93c5fd;margin-top:2px;">jadwal live' + (r.message && /tapi:/.test(r.message) ? ' (<span style="color:#fbbf24;">' + escapeHtml(r.message.replace("Jadwal live dibuat, tapi: ", "")) + '</span>)' : '') + '</div>' : (r.message && /tapi:/.test(r.message) ? '<div style="font-size:10px;color:#fbbf24;margin-top:2px;">' + escapeHtml(r.message) + '</div>' : '')) +
-        (r.chatSent ? '<div style="font-size:10px;color:#86efac;margin-top:2px;">&#10003; Chat terkirim</div>' : '') +
+        (r.chatSent ? '<div style="font-size:10px;color:#86efac;margin-top:2px;">&#10003; Chat terkirim' + (r.chatSentCount > 1 ? ' (' + r.chatSentCount + 'x)' : '') + '</div>' : '') +
         (r.mode === "live" && r.videoId && r.chatMessage ? '<a class="pin-btn" href="' + liveChatUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Pin Chat</a> ' : '') +
         (r.uploadedVia ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;">via ' + escapeHtml(r.uploadedVia) + '</div>' : '') + '</div>';
       else if (r.status === "gagal") statusHtml = '<div><span class="status-tag gagal">Gagal</span><div style="font-size:10px;color:#fca5a5;max-width:180px;margin-top:3px;">' + escapeHtml(r.message || "") + '</div></div>';
@@ -2279,6 +2575,8 @@
 
     renderAccountsList();
     renderPlaylistAccountSelect();
+    renderPinChatAccountSelect();
+    renderBannerAccountSelect();
     updateUploadBtnState();
   }
 
@@ -3229,6 +3527,265 @@
     }
   }
 
+  // ================= BANNER IMAGE CHANNEL VIA API (2048x1152, <= 6 MB) =================
+  var customBannerImage = null;   // { img: HTMLImageElement, url: objectURL, name: string }
+  var bannerBusy = false;
+
+  function renderBannerAccountSelect(){
+    if (!el.bannerAccountSelect) return;
+    var prev = el.bannerAccountSelect.value;
+    if (!accounts.length){
+      el.bannerAccountSelect.innerHTML = '<option value="">(belum ada akun / Brand Channel login)</option>';
+      updateStudioProfileHref();
+      return;
+    }
+    var opts = [];
+    if (accounts.length > 1){
+      opts.push('<option value="__ALL__">Semua Brand Account Aktif (' + accounts.length + ' channel)</option>');
+    }
+    accounts.forEach(function(a, i){
+      var tag = a.channelSuspended ? " [SUSPENDED]" : (isTokenExpired(a) ? " [Token habis]" : "");
+      var lbl = (a.channelTitle || a.email || ("Akun " + (i + 1))) + (a.channelId ? " (" + a.channelId + ")" : "") + tag;
+      opts.push('<option value="' + i + '">' + escapeHtml(lbl) + '</option>');
+    });
+    el.bannerAccountSelect.innerHTML = opts.join("");
+    if (prev && (prev === "__ALL__" || Number(prev) < accounts.length)) el.bannerAccountSelect.value = prev;
+    updateStudioProfileHref();
+  }
+
+  function updateStudioProfileHref(){
+    if (!el.openStudioProfileLink || !el.bannerAccountSelect) return;
+    var v = el.bannerAccountSelect.value;
+    var acc = (v !== "" && v !== "__ALL__") ? accounts[Number(v)] : accounts[0];
+    if (acc && acc.channelId){
+      el.openStudioProfileLink.href = "https://studio.youtube.com/channel/" + encodeURIComponent(acc.channelId) + "/editing/profile";
+    } else {
+      el.openStudioProfileLink.href = "https://studio.youtube.com/";
+    }
+  }
+
+  function setCustomBannerFile(fileList){
+    if (!fileList || !fileList.length) return;
+    var file = fileList[0];
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)){ showToast("Banner harus PNG / JPG / WebP"); return; }
+    if (file.size > 15 * 1024 * 1024){ showToast("Ukuran file terlalu besar (>15 MB)"); return; }
+    if (customBannerImage && customBannerImage.url) URL.revokeObjectURL(customBannerImage.url);
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      customBannerImage = { img: img, url: url, name: file.name };
+      if (el.bannerFileLabel) el.bannerFileLabel.textContent = "Dipilih: " + file.name + " (" + img.naturalWidth + "×" + img.naturalHeight + " → auto-resize 2048×1152)";
+      if (el.clearBannerImgBtn) el.clearBannerImgBtn.style.display = "inline-block";
+      if (el.bannerPreviewImg) el.bannerPreviewImg.src = url;
+      if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "flex";
+      if (el.bannerStatusText) el.bannerStatusText.textContent = "Siap di-upload ke Banner Image Channel (2048×1152 JPEG ≤ 6 MB).";
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); showToast("Gambar banner tidak bisa dibaca"); };
+    img.src = url;
+  }
+
+  function clearCustomBannerFile(){
+    if (customBannerImage && customBannerImage.url) URL.revokeObjectURL(customBannerImage.url);
+    customBannerImage = null;
+    if (el.bannerFileInput) el.bannerFileInput.value = "";
+    if (el.bannerFileLabel) el.bannerFileLabel.textContent = "Default: pakai gambar #1 dari Bagian 3";
+    if (el.clearBannerImgBtn) el.clearBannerImgBtn.style.display = "none";
+    if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "none";
+  }
+
+  // Render gambar ke ukuran resmi YouTube Channel Banner: 2048x1152 (16:9), JPEG <= 6 MB
+  function renderBannerBlob2048(sourceImg, cb){
+    try {
+      var W = 2048, H = 1152;
+      var c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      var ctx = c.getContext("2d");
+      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+      var iw = sourceImg.naturalWidth, ih = sourceImg.naturalHeight;
+      var scale = Math.max(W / iw, H / ih);
+      var dw = iw * scale, dh = ih * scale;
+      ctx.drawImage(sourceImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      var qualities = [0.92, 0.85, 0.78, 0.68];
+      var tryQ = function(i){
+        c.toBlob(function(blob){
+          if (!blob){ cb("Gagal render canvas banner 2048×1152."); return; }
+          if (blob.size <= 5800 * 1024 || i >= qualities.length - 1){
+            if (blob.size > 6 * 1024 * 1024){ cb("Ukuran banner melebihi batas 6 MB YouTube."); return; }
+            cb(null, blob);
+          } else tryQ(i + 1);
+        }, "image/jpeg", qualities[i]);
+      };
+      tryQ(0);
+    } catch (e){ cb("Gagal menyiapkan gambar banner: " + (e.message || e)); }
+  }
+
+  function resolveBannerTargets(){
+    if (!accounts.length) return [];
+    var v = el.bannerAccountSelect ? el.bannerAccountSelect.value : "";
+    if (v === "__ALL__"){
+      return accounts.filter(function(a){ return !isTokenExpired(a) && !a.channelSuspended; });
+    }
+    var acc = accounts[Number(v)];
+    return acc ? [acc] : [];
+  }
+
+  async function applyChannelBannerForAccount(acc, blob){
+    var token = await ensureFreshToken(acc);
+    // 1. Upload file banner ke channelBanners.insert (50 unit)
+    var upRes = await fetch("https://www.googleapis.com/upload/youtube/v3/channelBanners/insert?uploadType=media", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": blob.type || "image/jpeg" },
+      body: blob
+    });
+    addClientQuotaUsage(acc.clientId, "live", 50);
+    var upTxt = await upRes.text();
+    if (!upRes.ok) throw new Error("channelBanners.insert (" + upRes.status + "): " + upTxt.slice(0, 160));
+    var upJson = JSON.parse(upTxt);
+    var bannerUrl = upJson && upJson.url;
+    if (!bannerUrl) throw new Error("Respons channelBanners.insert tidak mengembalikan URL banner.");
+
+    // 2. Ambil brandingSettings existing supaya deskripsi/keyword channel tidak terhapus (1 unit)
+    var getRes = await fetch("https://www.googleapis.com/youtube/v3/channels?part=brandingSettings&mine=true", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    addClientQuotaUsage(acc.clientId, "live", 1);
+    var getTxt = await getRes.text();
+    if (!getRes.ok) throw new Error("channels.list (" + getRes.status + "): " + getTxt.slice(0, 160));
+    var getJson = JSON.parse(getTxt);
+    var ch = getJson.items && getJson.items[0];
+    if (!ch || !ch.id) throw new Error("Channel tidak ditemukan pada token akun ini.");
+
+    var bs = ch.brandingSettings ? JSON.parse(JSON.stringify(ch.brandingSettings)) : {};
+    bs.image = bs.image || {};
+    bs.image.bannerExternalUrl = bannerUrl;
+
+    // 3. Terapkan banner ke channel via channels.update (50 unit)
+    var putRes = await fetch("https://www.googleapis.com/youtube/v3/channels?part=brandingSettings", {
+      method: "PUT",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify({ id: ch.id, brandingSettings: bs })
+    });
+    addClientQuotaUsage(acc.clientId, "live", 50);
+    var putTxt = await putRes.text();
+    if (!putRes.ok) throw new Error("channels.update (" + putRes.status + "): " + putTxt.slice(0, 160));
+    return { channelId: ch.id, bannerUrl: bannerUrl };
+  }
+
+  async function removeChannelBannerForAccount(acc){
+    var token = await ensureFreshToken(acc);
+    var getRes = await fetch("https://www.googleapis.com/youtube/v3/channels?part=brandingSettings&mine=true", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    addClientQuotaUsage(acc.clientId, "live", 1);
+    var getTxt = await getRes.text();
+    if (!getRes.ok) throw new Error("channels.list (" + getRes.status + "): " + getTxt.slice(0, 160));
+    var getJson = JSON.parse(getTxt);
+    var ch = getJson.items && getJson.items[0];
+    if (!ch || !ch.id) throw new Error("Channel tidak ditemukan.");
+
+    var bs = ch.brandingSettings ? JSON.parse(JSON.stringify(ch.brandingSettings)) : {};
+    bs.image = { bannerExternalUrl: "" };
+
+    var putRes = await fetch("https://www.googleapis.com/youtube/v3/channels?part=brandingSettings", {
+      method: "PUT",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify({ id: ch.id, brandingSettings: bs })
+    });
+    addClientQuotaUsage(acc.clientId, "live", 50);
+    var putTxt = await putRes.text();
+    if (!putRes.ok) throw new Error("channels.update (" + putRes.status + "): " + putTxt.slice(0, 160));
+    return ch.id;
+  }
+
+  function runApplyChannelBanner(){
+    if (bannerBusy || running){ showToast("Tunggu proses yang sedang berjalan selesai"); return; }
+    var targets = resolveBannerTargets();
+    if (!targets.length){ showToast("Login & pilih Brand Account yang aktif dulu"); return; }
+    var srcImg = (customBannerImage && customBannerImage.img) || (userImages.length ? userImages[0].img : null);
+    if (!srcImg){ showToast("Pilih Gambar Banner dulu (atau tambah gambar di Bagian 3)"); return; }
+
+    bannerBusy = true;
+    el.applyBannerBtn.disabled = true;
+    el.removeBannerBtn.disabled = true;
+    el.applyBannerBtn.textContent = "Merender 2048×1152 & mengupload...";
+    if (el.bannerStatusText) el.bannerStatusText.textContent = "Merender gambar ke 2048×1152 JPEG...";
+    if (el.bannerPreviewWrap) el.bannerPreviewWrap.style.display = "flex";
+    if (el.bannerPreviewImg) el.bannerPreviewImg.src = (customBannerImage && customBannerImage.url) || userImages[0].url;
+
+    renderBannerBlob2048(srcImg, async function(err, blob){
+      if (err){
+        bannerBusy = false;
+        el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
+        el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)";
+        log("✗ Gagal render banner: " + err, "error");
+        showToast(err);
+        return;
+      }
+      log("Banner dirender ke 2048×1152 JPEG (" + Math.round(blob.size / 1024) + " KB). Mengupload ke " + targets.length + " channel...", "info");
+      var ok = 0, fail = 0;
+      for (var i = 0; i < targets.length; i++){
+        var acc = targets[i];
+        if (isTokenExpired(acc) || acc.channelSuspended){
+          log("⏭ Lewati banner " + accountLabel(acc) + ": token habis / suspended.", "error");
+          fail++; continue;
+        }
+        try {
+          var res = await applyChannelBannerForAccount(acc, blob);
+          ok++;
+          log("✓ Banner Channel " + accountLabel(acc) + " BERHASIL diubah! (101 unit) — semua jadwal live baru tanpa thumbnails.set akan memakai gambar ini.", "success");
+        } catch (e){
+          fail++;
+          log("✗ Gagal ubah Banner " + accountLabel(acc) + ": " + (e.message || e), "error");
+        }
+      }
+      if (ok > 0 && el.bannerDisableThumbSetChk && el.bannerDisableThumbSetChk.checked && el.liveThumbChk){
+        el.liveThumbChk.checked = false;
+        log("ℹ Centang thumbnails.set dimatikan otomatis — jadwal live berikutnya bebas 429 & langsung memakai Banner Channel.", "info");
+      }
+      bannerBusy = false;
+      el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
+      el.applyBannerBtn.innerHTML = "&#128444; Change Banner (2048&times;1152 via API)";
+      if (el.bannerStatusText){
+        el.bannerStatusText.textContent = ok > 0
+          ? "✓ Banner berhasil diterapkan ke " + ok + " channel (" + Math.round(blob.size / 1024) + " KB, 2048×1152)."
+          : "✗ Gagal mengubah banner, cek Log Output.";
+      }
+      renderClientIds();
+      showToast(ok ? ("Banner berhasil diubah (" + ok + " channel)") : "Gagal mengubah banner, cek log");
+    });
+  }
+
+  async function runRemoveChannelBanner(){
+    if (bannerBusy || running){ showToast("Tunggu proses yang sedang berjalan selesai"); return; }
+    var targets = resolveBannerTargets();
+    if (!targets.length){ showToast("Login & pilih Brand Account yang aktif dulu"); return; }
+    if (!window.confirm("Hapus Banner Image pada " + targets.length + " channel yang dipilih?")) return;
+
+    bannerBusy = true;
+    el.applyBannerBtn.disabled = true;
+    el.removeBannerBtn.disabled = true;
+    el.removeBannerBtn.textContent = "Menghapus banner...";
+
+    var ok = 0, fail = 0;
+    for (var i = 0; i < targets.length; i++){
+      var acc = targets[i];
+      if (isTokenExpired(acc) || acc.channelSuspended){ fail++; continue; }
+      try {
+        await removeChannelBannerForAccount(acc);
+        ok++;
+        log("✓ Banner Channel " + accountLabel(acc) + " berhasil dihapus via API.", "success");
+      } catch (e){
+        fail++;
+        log("✗ Gagal hapus banner via API (" + accountLabel(acc) + "): " + (e.message || e) + " — jika ditolak API, klik tombol 'Buka Profile Studio' untuk klik Remove manual.", "error");
+      }
+    }
+    bannerBusy = false;
+    el.applyBannerBtn.disabled = false; el.removeBannerBtn.disabled = false;
+    el.removeBannerBtn.innerHTML = "&#128465; Remove Banner";
+    renderClientIds();
+    showToast(ok ? ("Banner dihapus (" + ok + " channel)") : "Gagal hapus via API, cek log");
+  }
+
   // ================= JADWAL LIVE (liveBroadcasts.insert + thumbnails.set + videos.update) =================
   // Klasifikasi error khusus live: reason di JSON menentukan apakah akun/channel-nya yang bermasalah (bukan kuota).
   function classifyLiveError(status, bodyText){
@@ -3281,6 +3838,7 @@
         var bc; try { bc = JSON.parse(txt); } catch (e){ cb({ ok: false, error: "Response broadcast bukan JSON valid" }); return; }
         var videoId = bc.id;   // id broadcast = id video di YouTube
         var warnings = [];
+        var thumbRateLimited = false;
 
         // ---- tahap 2: thumbnail (retry otomatis kalau kena rate limit 429, burst limit thumbnails.set beda dari kuota harian) ----
         var stepThumb = function(next){
@@ -3298,7 +3856,6 @@
               if (r.ok){ next(); return; }
               return r.text().then(function(t){
                 if (r.status === 429 && attempt < MAX_ATTEMPTS){
-                  // 429 di thumbnails.set biasanya burst rate limit sesaat (bukan kuota harian habis) -> tunggu lalu coba lagi
                   var delayMs = attempt === 1 ? 4000 : 10000;
                   log("⏳ Thumbnail kena rate limit (429) untuk \"" + row.title + "\", coba lagi otomatis dalam " + (delayMs / 1000) + " detik (percobaan " + (attempt + 1) + "/" + MAX_ATTEMPTS + ")...", "info");
                   setTimeout(tryOnce, delayMs);
@@ -3306,7 +3863,10 @@
                 }
                 var c2 = classifyApiError(r.status, t);
                 if (c2.quota) warnings.push("thumbnail: kuota habis");
-                else if (r.status === 429) warnings.push("thumbnail masih kena rate limit (429) setelah " + MAX_ATTEMPTS + "x coba, thumbnail default YouTube dipakai");
+                else if (r.status === 429){
+                  thumbRateLimited = true;
+                  warnings.push("thumbnail kena limit 429 (memakai Banner Image Channel)");
+                }
                 else if (r.status === 403) warnings.push("thumbnail ditolak (channel belum terverifikasi telepon?)");
                 else warnings.push("thumbnail gagal (" + r.status + ")");
                 next();
@@ -3370,54 +3930,32 @@
           });
         };
 
-        // ---- tahap 6: kirim pesan awal ke Live Chat jika kolom Isi_Chatt terisi ----
+        // ---- tahap 6: kirim pesan awal ke Live Chat (default 3x berturut-turut) jika kolom Isi_Chatt terisi ----
         var stepChat = function(next){
-          if (!row.chatMessage){ next(); return; }
-          var sendWithChatId = function(chatId){
-            if (!chatId){ warnings.push("chat: liveChatId belum tersedia dari YouTube"); next(); return; }
-            row.liveChatId = chatId;
-            fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
-              method: "POST",
-              headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
-              body: JSON.stringify({
-                snippet: {
-                  liveChatId: chatId,
-                  type: "textMessageEvent",
-                  textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
-                }
-              })
-            }).then(function(r){
-              costUsed += 50;
-              return r.text().then(function(t){
-                if (r.ok){
-                  var mj = {}; try { mj = JSON.parse(t); } catch (e){}
-                  row.chatMessageId = mj.id || "";
-                  row.chatSent = true;
-                  next();
-                  return;
-                }
-                warnings.push("chat gagal (" + r.status + ")");
-                next();
-              });
-            }).catch(function(e){ warnings.push("chat: " + (e.message || e)); next(); });
-          };
-
-          var initialChatId = bc.snippet && bc.snippet.liveChatId;
-          if (initialChatId){
-            sendWithChatId(initialChatId);
+          var repeatCnt = el.liveChatRepeatSelect ? parseInt(el.liveChatRepeatSelect.value, 10) : 3;
+          if (!row.chatMessage || !repeatCnt || repeatCnt < 1){ next(); return; }
+          if (row.privacy === "private"){
+            warnings.push("chat: dilewati karena privacy=private (Live Chat YouTube hanya aktif untuk public/unlisted)");
+            next();
             return;
           }
-          // Jika liveChatId belum langsung muncul di respons insert, tunggu 1.5 detik lalu ambil ulang dari liveBroadcasts.list
+          var initialChatId = (bc.snippet && bc.snippet.liveChatId) || "";
+          // Tunggu 3 detik dulu agar ruang Live Chat YouTube selesai diinisialisasi (mencegah 404 liveChatNotFound)
           setTimeout(function(){
-            fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&id=" + encodeURIComponent(videoId), {
-              headers: { "Authorization": "Bearer " + token }
-            }).then(function(r){ costUsed += 1; return r.ok ? r.json() : {}; })
-              .catch(function(){ return {}; })
-              .then(function(d){
-                var cid = d && d.items && d.items[0] && d.items[0].snippet && d.items[0].snippet.liveChatId;
-                sendWithChatId(cid || null);
-              });
-          }, 1500);
+            postLiveChatRepeated(videoId, initialChatId, row.chatMessage, repeatCnt, 2500, token, row.title, null, function(errC, infoC){
+              costUsed += (infoC && infoC.units) || 0;
+              if (infoC && infoC.liveChatId) row.liveChatId = infoC.liveChatId;
+              if (infoC && infoC.sentCount > 0){
+                row.chatMessageId = infoC.lastMessageId || "";
+                row.chatSentCount = (row.chatSentCount || 0) + infoC.sentCount;
+                row.chatSent = true;
+              }
+              if (errC){
+                warnings.push("chat (" + ((infoC && infoC.sentCount) || 0) + "/" + repeatCnt + "): " + errC);
+              }
+              next();
+            });
+          }, 3000);
         };
 
         stepThumb(function(){
@@ -3425,7 +3963,7 @@
             stepStream(function(){
               stepPlaylist(function(){
                 stepChat(function(){
-                  cb({ ok: true, videoId: videoId, warnings: warnings, unitsUsed: costUsed, error: warnings.length ? warnings.join("; ") : null });
+                  cb({ ok: true, videoId: videoId, warnings: warnings, thumbRateLimited: thumbRateLimited, unitsUsed: costUsed, error: warnings.length ? warnings.join("; ") : null });
                 });
               });
             });
@@ -3433,6 +3971,135 @@
         });
       });
     }).catch(function(e){ cb({ ok: false, error: e.message || String(e) }); });
+  }
+
+  // ---- Helper Live Chat: ambil activeLiveChatId terbaru & auto-retry saat 404 liveChatNotFound / 429 ----
+  function extractApiErrorDetail(bodyText){
+    try {
+      var j = JSON.parse(bodyText);
+      var e0 = j && j.error && j.error.errors && j.error.errors[0];
+      var reason = (e0 && e0.reason) || "";
+      var msg = (j && j.error && j.error.message) || "";
+      return { reason: reason, message: msg };
+    } catch (e){ return { reason: "", message: "" }; }
+  }
+
+  function fetchActiveLiveChatId(videoId, token){
+    // Prioritas 1: videos?part=liveStreamingDetails (hanya mengembalikan activeLiveChatId jika ruang chat sudah siap)
+    return fetch("https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=" + encodeURIComponent(videoId), {
+      headers: { "Authorization": "Bearer " + token }
+    }).then(function(r){ return r.ok ? r.json() : {}; })
+      .catch(function(){ return {}; })
+      .then(function(d){
+        var active = d && d.items && d.items[0] && d.items[0].liveStreamingDetails && d.items[0].liveStreamingDetails.activeLiveChatId;
+        if (active) return { chatId: active, units: 1 };
+        // Fallback: liveBroadcasts?part=snippet
+        return fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&id=" + encodeURIComponent(videoId), {
+          headers: { "Authorization": "Bearer " + token }
+        }).then(function(r2){ return r2.ok ? r2.json() : {}; })
+          .catch(function(){ return {}; })
+          .then(function(d2){
+            var cid = d2 && d2.items && d2.items[0] && d2.items[0].snippet && d2.items[0].snippet.liveChatId;
+            return { chatId: cid || null, units: 2 };
+          });
+      });
+  }
+
+  function postLiveChatMessageWithRetry(videoId, initialChatId, messageText, token, title, cb){
+    var MAX_ATTEMPTS = 3;
+    var attempt = 0;
+    var totalUnits = 0;
+    var currentChatId = initialChatId || "";
+
+    var trySend = function(needRefreshId){
+      attempt++;
+      var resolveId = (!currentChatId || needRefreshId)
+        ? fetchActiveLiveChatId(videoId, token).then(function(res){
+            totalUnits += res.units;
+            if (res.chatId) currentChatId = res.chatId;
+            return currentChatId;
+          })
+        : Promise.resolve(currentChatId);
+
+      resolveId.then(function(chatId){
+        if (!chatId){
+          if (attempt < MAX_ATTEMPTS){
+            var waitMs = attempt === 1 ? 4000 : 8000;
+            log("⏳ liveChatId belum aktif untuk \"" + title + "\", coba lagi dalam " + (waitMs / 1000) + " detik (percobaan " + (attempt + 1) + "/" + MAX_ATTEMPTS + ")...", "info");
+            setTimeout(function(){ trySend(true); }, waitMs);
+            return;
+          }
+          cb("liveChatId belum tersedia (chat mungkin nonaktif di channel/broadcast)", { units: totalUnits, liveChatId: "" });
+          return;
+        }
+        fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+          body: JSON.stringify({
+            snippet: {
+              liveChatId: chatId,
+              type: "textMessageEvent",
+              textMessageDetails: { messageText: String(messageText).slice(0, 200) }
+            }
+          })
+        }).then(function(r){
+          totalUnits += 50;
+          return r.text().then(function(t){
+            if (r.ok){
+              var mj = {}; try { mj = JSON.parse(t); } catch (e){}
+              cb(null, { units: totalUnits, liveChatId: chatId, messageId: mj.id || "" });
+              return;
+            }
+            var det = extractApiErrorDetail(t);
+            var isRetryable = (r.status === 404 || r.status === 429 || r.status >= 500);
+            if (isRetryable && attempt < MAX_ATTEMPTS){
+              var delayMs = attempt === 1 ? 5000 : 10000;
+              log("⏳ Chat \"" + title + "\" kena " + r.status + (det.reason ? " (" + det.reason + ")" : "") + ", menunggu ruang chat siap lalu coba lagi dalam " + (delayMs / 1000) + " detik (percobaan " + (attempt + 1) + "/" + MAX_ATTEMPTS + ")...", "info");
+              setTimeout(function(){ trySend(true); }, delayMs);
+              return;
+            }
+            var hint = "";
+            if (r.status === 404) hint = " — ruang chat belum aktif/tidak ditemukan (tunggu sebentar lalu klik 'Kirim Ulang Chat Gagal' atau pakai Script Auto-Pin)";
+            else if (det.reason === "liveChatDisabled") hint = " — Live Chat nonaktif (cek pengaturan Made for Kids / privasi)";
+            cb("gagal (" + r.status + (det.reason ? " " + det.reason : "") + ")" + hint, { units: totalUnits, liveChatId: chatId });
+          });
+        }).catch(function(e){
+          cb(e.message || String(e), { units: totalUnits, liveChatId: currentChatId });
+        });
+      });
+    };
+
+    trySend(!currentChatId);
+  }
+
+  // Kirim pesan Live Chat berulang (default 3x) dengan jeda antar pengiriman & auto-retry 404/429
+  function postLiveChatRepeated(videoId, initialChatId, messageText, repeatCount, delayMs, token, title, onStep, cb){
+    var count = Math.max(1, Math.min(10, parseInt(repeatCount, 10) || 3));
+    var gap = Math.max(500, Number(delayMs) || 2500);
+    var sent = 0, totalUnits = 0, liveChatId = initialChatId || "", lastMsgId = "";
+    var k = 0;
+
+    function nextSend(){
+      if (k >= count){
+        cb(null, { sentCount: sent, units: totalUnits, liveChatId: liveChatId, lastMessageId: lastMsgId });
+        return;
+      }
+      k++;
+      if (onStep) onStep(k, count);
+      postLiveChatMessageWithRetry(videoId, liveChatId, messageText, token, title + " (" + k + "/" + count + ")", function(err, info){
+        totalUnits += (info && info.units) || 0;
+        if (info && info.liveChatId) liveChatId = info.liveChatId;
+        if (err){
+          cb(err, { sentCount: sent, units: totalUnits, liveChatId: liveChatId, lastMessageId: lastMsgId });
+          return;
+        }
+        sent++;
+        if (info && info.messageId) lastMsgId = info.messageId;
+        if (k < count) setTimeout(nextSend, gap);
+        else nextSend();
+      });
+    }
+    nextSend();
   }
 
   // ---- Cache & Helper untuk kolom Nama_Stream, Deskripsi_Stream, dan Playlist ----
@@ -3716,46 +4383,25 @@
         return;
       }
       ensureFreshToken(acc).then(function(token){
-        var getChatId = row.liveChatId
-          ? Promise.resolve(row.liveChatId)
-          : fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&id=" + encodeURIComponent(row.videoId), {
-              headers: { "Authorization": "Bearer " + token }
-            }).then(function(r){ addClientQuotaUsage(acc.clientId, "live", 1); return r.ok ? r.json() : {}; })
-              .then(function(d){ return d && d.items && d.items[0] && d.items[0].snippet && d.items[0].snippet.liveChatId; });
-
-        getChatId.then(function(chatId){
-          if (!chatId){ log("✗ Chat \"" + row.title + "\": liveChatId belum tersedia.", "error"); fail++; i++; setTimeout(next, 600); return; }
-          row.liveChatId = chatId;
-          return fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
-            body: JSON.stringify({
-              snippet: {
-                liveChatId: chatId,
-                type: "textMessageEvent",
-                textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
-              }
-            })
-          }).then(function(r){
-            addClientQuotaUsage(acc.clientId, "live", 50);
-            return r.text().then(function(t){
-              if (r.ok){
-                var mj = {}; try { mj = JSON.parse(t); } catch (e){}
-                row.chatMessageId = mj.id || "";
-                row.chatSent = true;
-                row.message = (row.message || "").replace(/;?\s*chat[^;]*/i, "").replace(/^Jadwal live dibuat, tapi:\s*;?\s*/i, "Jadwal live dibuat").trim() || "Jadwal live dibuat";
-                log("✓ Chat \"" + row.title + "\" berhasil dikirim (ID: " + (row.chatMessageId || "-") + ").", "success");
-                ok++;
-              } else {
-                log("✗ Chat \"" + row.title + "\" gagal (" + r.status + "): " + t.slice(0, 120), "error");
-                fail++;
-              }
-              i++; setTimeout(next, 1200);
-            });
-          });
-        }).catch(function(e){
-          log("✗ Chat \"" + row.title + "\" error: " + (e.message || e), "error");
-          fail++; i++; setTimeout(next, 600);
+        var rep = el.liveChatRepeatSelect ? parseInt(el.liveChatRepeatSelect.value, 10) : 3;
+        if (!rep || rep < 1) rep = 3;
+        postLiveChatRepeated(row.videoId, row.liveChatId || "", row.chatMessage, rep, 2500, token, row.title, null, function(errC, infoC){
+          addClientQuotaUsage(acc.clientId, "live", (infoC && infoC.units) || 0);
+          if (infoC && infoC.liveChatId) row.liveChatId = infoC.liveChatId;
+          if (infoC && infoC.sentCount > 0){
+            row.chatMessageId = infoC.lastMessageId || "";
+            row.chatSentCount = (row.chatSentCount || 0) + infoC.sentCount;
+            row.chatSent = true;
+          }
+          if (errC){
+            log("✗ Chat \"" + row.title + "\" (" + ((infoC && infoC.sentCount) || 0) + "/" + rep + ") gagal: " + errC, "error");
+            fail++;
+          } else {
+            row.message = (row.message || "").replace(/;?\s*chat[^;]*/i, "").replace(/^Jadwal live dibuat, tapi:\s*;?\s*/i, "Jadwal live dibuat").trim() || "Jadwal live dibuat";
+            log("✓ Chat \"" + row.title + "\" berhasil dikirim " + infoC.sentCount + "x (ID terakhir: " + (row.chatMessageId || "-") + ").", "success");
+            ok++;
+          }
+          i++; setTimeout(next, 1200);
         });
       }).catch(function(e){
         log("✗ Token error untuk chat \"" + row.title + "\": " + e.message, "error");
@@ -4241,6 +4887,385 @@
     });
   }
 
+  // ================= MODE KHUSUS PIN CHAT (3X) =================
+  var pcRunning = false;
+  var pcStopRequested = false;
+  var pcRows = [];      // { _id, videoId, title, chatMessage, liveChatId, sentCount, status, message, channelId }
+  var pcLogBuffer = [];
+
+  function pcAppendLogLine(ts, type, text){
+    if (!el.logBody3) return;
+    var line = document.createElement("div");
+    line.className = "log-line " + type;
+    var t = document.createElement("span");
+    t.className = "t";
+    t.textContent = "[" + fmtTime(ts) + "]";
+    var msg = document.createElement("span");
+    msg.textContent = text;
+    line.appendChild(t);
+    line.appendChild(msg);
+    el.logBody3.appendChild(line);
+    el.logBody3.scrollTop = el.logBody3.scrollHeight;
+  }
+  function pcLog(text, type){
+    type = type || "info";
+    var ts = Date.now();
+    pcAppendLogLine(ts, type, text);
+    pcLogBuffer.push({ t: ts, type: type, text: String(text) });
+    if (pcLogBuffer.length > LOG_MAX) pcLogBuffer = pcLogBuffer.slice(pcLogBuffer.length - LOG_MAX);
+  }
+  function pcDownloadLog(){
+    if (pcLogBuffer.length === 0){ showToast("Log Pin Chat masih kosong"); return; }
+    var lines = pcLogBuffer.map(function(l){ return "[" + fmtDateTime(l.t) + "] [" + l.type.toUpperCase() + "] " + l.text; });
+    var header = "Log Pin Chat (3x) - diunduh " + fmtDateTime(Date.now()) + "\n" + new Array(60).join("-") + "\n";
+    var blob = new Blob([header + lines.join("\n") + "\n"], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "log-pinchat-3x-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".txt";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+  }
+
+  function renderPinChatAccountSelect(){
+    if (!el.pcAccountSelect) return;
+    var prevVal = el.pcAccountSelect.value;
+    if (!accounts.length){
+      el.pcAccountSelect.innerHTML = '<option value="">(belum ada akun / Brand Channel login)</option>';
+      return;
+    }
+    el.pcAccountSelect.innerHTML = accounts.map(function(a, i){
+      var tag = a.channelSuspended ? " [SUSPENDED]" : (isTokenExpired(a) ? " [Token habis]" : "");
+      var label = (a.channelTitle || a.email || ("Akun " + (i + 1))) + (a.channelId ? " (" + a.channelId + ")" : "") + tag;
+      return '<option value="' + i + '">' + escapeHtml(label) + '</option>';
+    }).join("");
+    if (prevVal !== "" && Number(prevVal) < accounts.length) el.pcAccountSelect.value = prevVal;
+  }
+
+  function pcGetRepeatCount(){
+    var v = el.pcRepeatInput ? parseInt(el.pcRepeatInput.value, 10) : 3;
+    if (isNaN(v) || v < 1) v = 3;
+    if (v > 10) v = 10;
+    return v;
+  }
+  function pcGetDelaySec(){
+    var v = el.pcDelayInput ? parseFloat(String(el.pcDelayInput.value).replace(",", ".")) : 2.5;
+    if (isNaN(v) || v < 0.5) v = 2.5;
+    return v;
+  }
+  function pcSyncButtonLabels(){
+    var n = pcGetRepeatCount();
+    if (el.pcSendApiBtn && !pcRunning) el.pcSendApiBtn.innerHTML = "&#128172; KIRIM CHAT " + n + "X VIA API";
+    if (el.pcExportScriptBtn) el.pcExportScriptBtn.innerHTML = "&#128204; UNDUH SCRIPT AUTO-PIN " + n + "X (.PY)";
+  }
+
+  function renderPinChatRows(){
+    if (!el.pcRowsTable) return;
+    if (el.pcCountPill) el.pcCountPill.textContent = pcRows.length + " event";
+    if (el.pcClearBtn) el.pcClearBtn.style.display = pcRows.length ? "inline-block" : "none";
+    if (!pcRows.length){
+      el.pcRowsWrap.style.display = "none";
+      el.pcRowsTable.innerHTML = "";
+      return;
+    }
+    el.pcRowsWrap.style.display = "block";
+    var defMsg = (el.pcDefaultMsgInput && el.pcDefaultMsgInput.value || "").trim();
+    var targetN = pcGetRepeatCount();
+    el.pcRowsTable.innerHTML = pcRows.map(function(r, idx){
+      var msgShow = (r.chatMessage || defMsg || "(pesan kosong)");
+      var statusHtml = "";
+      if (r.status === "ready") statusHtml = '<span class="status-tag ready">Siap</span>';
+      else if (r.status === "loading") statusHtml = '<span class="status-tag loading">' + escapeHtml(r.message || "Mengirim...") + '</span>';
+      else if (r.status === "sukses") statusHtml = '<span class="status-tag sukses">Terkirim ' + (r.sentCount || targetN) + 'x</span>';
+      else statusHtml = '<div><span class="status-tag gagal">Gagal</span><div style="font-size:10px;color:#fca5a5;max-width:170px;margin-top:2px;">' + escapeHtml(r.message || "") + '</div></div>';
+      return '<tr>' +
+        '<td>' +
+          '<div style="font-weight:500;">' + (idx + 1) + '. ' + escapeHtml(r.title || r.videoId) + '</div>' +
+          '<div class="mono" style="font-size:10.5px;color:#93c5fd;margin-top:2px;">' + escapeHtml(r.videoId) + '</div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + escapeHtml(msgShow) + '</div>' +
+        '</td>' +
+        '<td>' + statusHtml + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<a class="pin-btn" href="' + liveChatUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Buka &amp; Pin</a>' +
+          '<button class="acc-remove" data-pc-rm="' + idx + '" title="Hapus baris">&times;</button>' +
+        '</td>' +
+      '</tr>';
+    }).join("");
+
+    Array.prototype.forEach.call(el.pcRowsTable.querySelectorAll("[data-pc-rm]"), function(btn){
+      btn.addEventListener("click", function(){
+        if (pcRunning) return;
+        var i = parseInt(this.getAttribute("data-pc-rm"), 10);
+        pcRows.splice(i, 1);
+        renderPinChatRows();
+      });
+    });
+  }
+
+  function pcAddRowsUnique(newItems){
+    var existing = {};
+    pcRows.forEach(function(r){ existing[r.videoId] = true; });
+    var added = 0;
+    newItems.forEach(function(it){
+      if (!it.videoId || existing[it.videoId]) return;
+      existing[it.videoId] = true;
+      pcRows.push({
+        _id: genId(),
+        videoId: it.videoId,
+        title: it.title || it.videoId,
+        chatMessage: it.chatMessage || "",
+        liveChatId: it.liveChatId || "",
+        channelId: it.channelId || "",
+        sentCount: it.sentCount || 0,
+        status: it.sentCount >= pcGetRepeatCount() ? "sukses" : "ready",
+        message: ""
+      });
+      added++;
+    });
+    renderPinChatRows();
+    return added;
+  }
+
+  function pcLoadFromCurrentLiveSession(){
+    var live = doneRows(true);
+    if (!live.length){ showToast("Belum ada event live sukses di sesi ini"); return; }
+    var mapped = live.map(function(r){
+      return {
+        videoId: r.videoId,
+        title: r.title,
+        chatMessage: r.chatMessage || "",
+        liveChatId: r.liveChatId || "",
+        channelId: r.channelId || "",
+        sentCount: r.chatSentCount || (r.chatSent ? 1 : 0)
+      };
+    });
+    var added = pcAddRowsUnique(mapped);
+    pcLog("✓ Dimuat " + added + " event live dari sesi ini (total daftar: " + pcRows.length + ").", "success");
+    showToast(added + " event dimuat");
+  }
+
+  function pcParseManualLines(){
+    var lines = (el.pcVideoListInput.value || "").split("\n").map(function(l){ return l.trim(); }).filter(Boolean);
+    var out = [], bad = 0;
+    lines.forEach(function(l){
+      var parts = l.split("|");
+      var vid = extractVideoId(parts[0]);
+      var msg = parts.length > 1 ? parts.slice(1).join("|").trim() : "";
+      if (vid) out.push({ videoId: vid, title: vid, chatMessage: msg });
+      else bad++;
+    });
+    return { items: out, bad: bad };
+  }
+
+  function pcUpdateManualCount(){
+    if (!el.pcManualCountLabel) return;
+    var r = pcParseManualLines();
+    el.pcManualCountLabel.textContent = r.items.length + " link/ID terdeteksi" + (r.bad ? " (" + r.bad + " tidak valid)" : "");
+  }
+
+  function pcAddManualToList(){
+    var r = pcParseManualLines();
+    if (!r.items.length){ showToast("Belum ada link/ID video valid di kotak manual"); return; }
+    var added = pcAddRowsUnique(r.items);
+    el.pcVideoListInput.value = "";
+    pcUpdateManualCount();
+    pcLog("✓ Ditambahkan " + added + " target manual (total daftar: " + pcRows.length + ").", "success");
+    showToast(added + " target ditambahkan");
+  }
+
+  function pcProcessImportedObjects(objs, fileName){
+    var mapped = [];
+    (objs || []).forEach(function(raw){
+      var lower = {};
+      Object.keys(raw).forEach(function(k){ lower[String(k || "").trim().toLowerCase()] = String(raw[k] == null ? "" : raw[k]).trim(); });
+      var vid = extractVideoId(lower.videoid) || extractVideoId(lower.video_id) || extractVideoId(lower.link_live_chat) || extractVideoId(lower.link_watch);
+      if (!vid) return;
+      var msg = lower.isi_chatt || lower.isi_chat || lower.chat || "";
+      var title = lower.title || lower.judul || vid;
+      mapped.push({
+        videoId: vid,
+        title: title,
+        chatMessage: msg,
+        liveChatId: lower.live_chat_id || "",
+        channelId: lower.channel_id || ""
+      });
+    });
+    if (!mapped.length){
+      showToast("Tidak ada kolom videoId/link valid di file tersebut");
+      pcLog("✗ Import " + fileName + " gagal: tidak ditemukan videoId / link YouTube.", "error");
+      return;
+    }
+    var added = pcAddRowsUnique(mapped);
+    pcLog("✓ Diimport " + added + " event dari " + fileName + " (total daftar: " + pcRows.length + ").", "success");
+    showToast(added + " event diimport");
+  }
+
+  function pcHandleFile(fileList){
+    if (!fileList || !fileList.length) return;
+    var file = fileList[0];
+    var ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (ext !== "csv" && ext !== "xlsx" && ext !== "xls"){ showToast("Format harus .csv / .xlsx / .xls"); return; }
+    if (ext === "csv"){
+      var reader = new FileReader();
+      reader.onload = function(e){ pcProcessImportedObjects(parseCsvText(e.target.result), file.name); };
+      reader.readAsText(file);
+    } else {
+      loadSheetJs(function(ok){
+        if (!ok || !window.XLSX){ showToast("SheetJS belum siap"); return; }
+        var reader = new FileReader();
+        reader.onload = function(e){
+          var wb = window.XLSX.read(new Uint8Array(e.target.result), { type: "array", cellDates: true });
+          var sheet = wb.Sheets[wb.SheetNames[0]];
+          var rows = window.XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+          pcProcessImportedObjects(rows, file.name);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+  }
+
+  function runPinChatSend3xApi(){
+    if (pcRunning){ showToast("Proses kirim chat sedang berjalan"); return; }
+    // Jika user langsung menempel di kotak manual tanpa klik "+ Masukkan ke Daftar", otomatis tambahkan dulu
+    if (el.pcVideoListInput && el.pcVideoListInput.value.trim()){
+      var m = pcParseManualLines();
+      if (m.items.length){ pcAddRowsUnique(m.items); el.pcVideoListInput.value = ""; pcUpdateManualCount(); }
+    }
+    if (!pcRows.length){ showToast("Daftar event masih kosong — ambil dari sesi live, import CSV, atau tempel ID"); return; }
+
+    var idx = el.pcAccountSelect.value;
+    if (idx === "" || idx === null || !accounts[idx]){ showToast("Pilih akun / Brand Account di atas dulu"); return; }
+    var acc = accounts[idx];
+    if (isTokenExpired(acc)){ showToast("Token Brand Account habis — klik Login ulang di Bagian 1"); return; }
+    if (acc.channelSuspended){ showToast("Channel ter-suspend — pilih Brand Account aktif"); return; }
+
+    var repeatCnt = pcGetRepeatCount();
+    var delayMs = Math.round(pcGetDelaySec() * 1000);
+    var defMsg = (el.pcDefaultMsgInput && el.pcDefaultMsgInput.value || "").trim();
+
+    var targets = pcRows.filter(function(r){ return r.status !== "sukses"; });
+    if (!targets.length){
+      if (!window.confirm("Semua " + pcRows.length + " event sudah berstatus Terkirim. Kirim ulang " + repeatCnt + "x lagi untuk semuanya?")) return;
+      pcRows.forEach(function(r){ r.status = "ready"; r.sentCount = 0; r.message = ""; });
+      targets = pcRows.slice();
+    }
+
+    pcRunning = true;
+    pcStopRequested = false;
+    el.pcSendApiBtn.disabled = true;
+    el.pcSendApiBtn.textContent = "MENGIRIM CHAT " + repeatCnt + "X...";
+    el.pcStopBtn.style.display = "inline-block";
+    el.pcProgressWrap.style.display = "block";
+    el.pcProgressLabel.textContent = "0/" + targets.length;
+    el.pcProgressFill.style.width = "0%";
+    pcLog("Memulai kirim chat " + repeatCnt + "x (jeda " + (delayMs / 1000) + " dtk) untuk " + targets.length + " event via " + accountLabel(acc) + "...", "info");
+
+    var i = 0, okEv = 0, failEv = 0;
+    function finish(){
+      pcRunning = false;
+      pcStopRequested = false;
+      el.pcSendApiBtn.disabled = false;
+      pcSyncButtonLabels();
+      el.pcStopBtn.style.display = "none";
+      renderPinChatRows();
+      renderClientIds();
+      pcLog("Selesai kirim chat " + repeatCnt + "x: " + okEv + " event sukses, " + failEv + " gagal. Klik 'UNDUH SCRIPT AUTO-PIN " + repeatCnt + "X (.PY)' atau klik 'Buka & Pin' per baris untuk menyematkan chat.", okEv ? "success" : "error");
+      showToast("Selesai: " + okEv + " sukses, " + failEv + " gagal");
+    }
+
+    function next(){
+      if (pcStopRequested){
+        pcLog("Dihentikan user pada event ke-" + i + "/" + targets.length + ".", "error");
+        finish();
+        return;
+      }
+      if (i >= targets.length){ finish(); return; }
+      var row = targets[i];
+      var msg = (row.chatMessage || defMsg).trim();
+      if (!msg){
+        row.status = "gagal"; row.message = "Pesan (Isi_Chatt / Default) kosong";
+        pcLog("✗ [" + (i + 1) + "/" + targets.length + "] " + row.videoId + ": pesan kosong.", "error");
+        failEv++; i++;
+        el.pcProgressLabel.textContent = i + "/" + targets.length;
+        el.pcProgressFill.style.width = Math.round(i / targets.length * 100) + "%";
+        renderPinChatRows();
+        setTimeout(next, 200);
+        return;
+      }
+      row.status = "loading";
+      row.message = "Kirim 1/" + repeatCnt + "...";
+      el.pcProgressTitle.textContent = "Memproses [" + (i + 1) + "/" + targets.length + "] " + row.title;
+      renderPinChatRows();
+
+      ensureFreshToken(acc).then(function(token){
+        postLiveChatRepeated(row.videoId, row.liveChatId || "", msg, repeatCnt, delayMs, token, row.title,
+          function(step, tot){
+            row.message = "Kirim " + step + "/" + tot + "...";
+            renderPinChatRows();
+          },
+          function(err, info){
+            addClientQuotaUsage(acc.clientId, "live", (info && info.units) || 0);
+            if (info && info.liveChatId) row.liveChatId = info.liveChatId;
+            if (info && info.sentCount > 0) row.sentCount = info.sentCount;
+            if (err){
+              row.status = "gagal";
+              row.message = "(" + ((info && info.sentCount) || 0) + "/" + repeatCnt + ") " + err;
+              pcLog("✗ [" + (i + 1) + "/" + targets.length + "] " + row.videoId + ": " + row.message, "error");
+              failEv++;
+            } else {
+              row.status = "sukses";
+              row.message = "Terkirim " + info.sentCount + "x";
+              pcLog("✓ [" + (i + 1) + "/" + targets.length + "] " + row.title + " (" + row.videoId + ") terkirim " + info.sentCount + "x.", "success");
+              okEv++;
+            }
+            i++;
+            el.pcProgressLabel.textContent = i + "/" + targets.length;
+            el.pcProgressFill.style.width = Math.round(i / targets.length * 100) + "%";
+            renderPinChatRows();
+            renderClientIds();
+            setTimeout(next, 1500);
+          }
+        );
+      }).catch(function(e){
+        row.status = "gagal"; row.message = e.message || String(e);
+        failEv++; i++; renderPinChatRows(); setTimeout(next, 500);
+      });
+    }
+    next();
+  }
+
+  function exportPinChatTabScript(){
+    if (el.pcVideoListInput && el.pcVideoListInput.value.trim()){
+      var m = pcParseManualLines();
+      if (m.items.length){ pcAddRowsUnique(m.items); el.pcVideoListInput.value = ""; pcUpdateManualCount(); }
+    }
+    var source = pcRows.length ? pcRows : doneRows(true).map(function(r){
+      return { videoId: r.videoId, title: r.title, chatMessage: r.chatMessage || "", channelId: r.channelId || "", sentCount: r.chatSentCount || 0 };
+    });
+    if (!source.length){ showToast("Belum ada event untuk dibuatkan script Auto-Pin 3x"); return; }
+    var defMsg = (el.pcDefaultMsgInput && el.pcDefaultMsgInput.value || "").trim();
+    var items = source.map(function(r){
+      return {
+        video_id: r.videoId,
+        title: r.title || r.videoId,
+        isi_chatt: (r.chatMessage || defMsg || "").trim(),
+        channel_id: r.channelId || "",
+        chat_sent_count: r.sentCount || 0
+      };
+    });
+    var repeatCnt = pcGetRepeatCount();
+    var delaySec = pcGetDelaySec();
+    var skipPinned = el.pcSkipPinnedChk ? el.pcSkipPinnedChk.checked : true;
+    var py = buildAutoPin3xPython(items, repeatCnt, delaySec, skipPinned, defMsg);
+    var blob = new Blob([py], { type: "text/x-python;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "auto_pin_chat_" + repeatCnt + "x-" + todayStamp() + ".py";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
+    pcLog("✓ Diunduh script Auto-Pin " + repeatCnt + "x (" + items.length + " event).", "success");
+    showToast("Script auto_pin_chat_" + repeatCnt + "x.py diunduh");
+  }
+
   // ================= UPLOAD KE YOUTUBE (videos.insert) =================
   // token dioper eksplisit (bukan global) supaya jelas akun mana yang dipakai tiap panggilan.
   function uploadOneEvent(row, token, videoBlob, cb){
@@ -4486,7 +5511,8 @@
 
       // Satu langkah "hasilkan aset lalu kirim". Mode video: render WebM 5 detik -> videos.insert.
       // Mode live: render JPEG thumbnail jika checkbox aktif -> liveBroadcasts.insert (+ thumbnail + tag).
-      var wantLiveThumb = el.liveThumbChk ? el.liveThumbChk.checked : (userImages.length > 0);
+      var skipDue429 = !!(acc.thumbRateLimited && el.autoSkip429ThumbChk && el.autoSkip429ThumbChk.checked);
+      var wantLiveThumb = (el.liveThumbChk ? el.liveThumbChk.checked : (userImages.length > 0)) && !skipDue429;
       var makeAsset = appMode === "live" ? (wantLiveThumb ? renderThumbnailForRow : function(row, cb){ cb(null, null); }) : renderVideoForRow;
       makeAsset(row, function(renderErr, blob){
         if (renderErr){
@@ -4530,6 +5556,12 @@
             log("✓ SUKSES" + (appMode === "live" ? " (jadwal live)" : "") + " via " + (acc.channelTitle || acc.email) + ": " + row.title + " -> id " + res.videoId +
                 (res.unitsUsed ? " (" + res.unitsUsed + " unit)" : ""), "success");
             if (res.warnings && res.warnings.length) log("  ⚠ Catatan: " + res.warnings.join("; "), "error");
+            if (res.thumbRateLimited && !acc.thumbRateLimited){
+              acc.thumbRateLimited = true;
+              if (el.autoSkip429ThumbChk && el.autoSkip429ThumbChk.checked){
+                log("ℹ Channel " + accountLabel(acc) + " ditandai limit thumbnail 429 — event berikutnya di channel ini otomatis melewati thumbnails.set & langsung memakai Banner Channel.", "info");
+              }
+            }
             if (acc.usedCount >= limitPerAccount){
               log("Akun " + (acc.channelTitle || acc.email) + " sudah mencapai limit " + limitPerAccount + " event, pindah ke akun berikutnya" + (activeAccountIndex + 1 < accounts.length ? " (akun #" + (activeAccountIndex + 2) + ")." : ", TAPI tidak ada akun berikutnya."), "info");
               activeAccountIndex++;
@@ -4711,6 +5743,12 @@
   el.imageFileInput.addEventListener("change", function(e){ addUserImages(e.target.files); e.target.value = ""; });
   el.clearImageBtn.addEventListener("click", clearUserImage);
   el.overlayTitleChk.addEventListener("change", renderAssetPreview);
+  if (el.bannerAccountSelect) el.bannerAccountSelect.addEventListener("change", updateStudioProfileHref);
+  if (el.pickBannerImgBtn) el.pickBannerImgBtn.addEventListener("click", function(){ el.bannerFileInput.click(); });
+  if (el.bannerFileInput) el.bannerFileInput.addEventListener("change", function(e){ setCustomBannerFile(e.target.files); e.target.value = ""; });
+  if (el.clearBannerImgBtn) el.clearBannerImgBtn.addEventListener("click", clearCustomBannerFile);
+  if (el.applyBannerBtn) el.applyBannerBtn.addEventListener("click", runApplyChannelBanner);
+  if (el.removeBannerBtn) el.removeBannerBtn.addEventListener("click", runRemoveChannelBanner);
 
   el.selectAllChk.addEventListener("change", function(){
     var checked = this.checked;
@@ -4887,6 +5925,20 @@
   el.modeVideoBtn.addEventListener("click", function(){ setMode("video"); });
   el.modeLiveBtn.addEventListener("click", function(){ setMode("live"); });
   el.modePlaylistBtn.addEventListener("click", function(){ setMode("playlist"); });
+  if (el.modePinChatBtn) el.modePinChatBtn.addEventListener("click", function(){ setMode("pinchat"); });
+  if (el.pcLoadFromLiveBtn) el.pcLoadFromLiveBtn.addEventListener("click", pcLoadFromCurrentLiveSession);
+  if (el.pcPickFileBtn) el.pcPickFileBtn.addEventListener("click", function(){ el.pcCsvFileInput.click(); });
+  if (el.pcCsvFileInput) el.pcCsvFileInput.addEventListener("change", function(e){ pcHandleFile(e.target.files); e.target.value = ""; });
+  if (el.pcClearBtn) el.pcClearBtn.addEventListener("click", function(){ if (pcRunning) return; pcRows = []; renderPinChatRows(); showToast("Daftar Pin Chat dikosongkan"); });
+  if (el.pcVideoListInput) el.pcVideoListInput.addEventListener("input", pcUpdateManualCount);
+  if (el.pcAddManualBtn) el.pcAddManualBtn.addEventListener("click", pcAddManualToList);
+  if (el.pcDefaultMsgInput) el.pcDefaultMsgInput.addEventListener("input", function(){ if (pcRows.length) renderPinChatRows(); });
+  if (el.pcRepeatInput) el.pcRepeatInput.addEventListener("input", pcSyncButtonLabels);
+  if (el.pcSendApiBtn) el.pcSendApiBtn.addEventListener("click", runPinChatSend3xApi);
+  if (el.pcStopBtn) el.pcStopBtn.addEventListener("click", function(){ if (pcRunning){ pcStopRequested = true; el.pcStopBtn.disabled = true; el.pcStopBtn.textContent = "Menghentikan..."; } });
+  if (el.pcExportScriptBtn) el.pcExportScriptBtn.addEventListener("click", exportPinChatTabScript);
+  if (el.clearLogBtn3) el.clearLogBtn3.addEventListener("click", function(){ el.logBody3.innerHTML = ""; pcLogBuffer = []; });
+  if (el.downloadLogBtn3) el.downloadLogBtn3.addEventListener("click", pcDownloadLog);
   el.buildPlaylistBtn.addEventListener("click", runPlaylistBuild);
   el.plSearchBtn.addEventListener("click", runPlaylistSearch);
   el.plAddSelectedBtn.addEventListener("click", appendSelectedSearchResults);
