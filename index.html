@@ -257,38 +257,54 @@
     <div class="sec-body">
       <div class="drop" id="dropZone">
         <div class="drop-icon">&#8593;</div>
-        <p>Drag &amp; Drop file kesini</p>
-        <p class="small">Atau klik tombol dibawah &mdash; format lama (header title, date, time, description, privacy, tags) atau format baru tanpa header</p>
+        <p>Drag &amp; Drop file CSV / Excel kesini</p>
+        <p class="small">Mendukung format 32 kolom (<code class="inline">Judul, Deskripsi_1..Deskripsi_20, Tags, Playlist, Thumbnail, Privacy, Bulan, Tanggal, Tahun, Waktu, Nama_Stream, Deskripsi_Stream, Isi_Chatt</code>), format lama, &amp; format tanpa header</p>
         <button class="btn-white" style="margin-top:14px;" id="pickFileBtn">Pilih File</button>
         <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls">
       </div>
 
       <div class="note-box" style="margin-top:14px;">
-        <b>Format tanpa header (otomatis dikenali):</b> tiap baris = 1 event. Kolom pertama = judul; kolom berlabel
-        <code class="inline">Date:</code> dan <code class="inline">Time:</code> (mis. <i>Saturday, Sep 19, 2026</i> dan <i>4:00 PM CDT</i>) dibaca sebagai jadwal
-        dibaca apa adanya beserta zona waktunya (jam tidak diubah; YouTube tetap menerima waktu yang tepat); kolom lain jadi deskripsi; kolom berawalan <code class="inline">#</code> jadi hashtag dan tags.<br>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">Privacy untuk format ini:
-          <select id="newFormatPrivacy" style="width:auto;padding:8px;">
-            <option value="private">private</option>
-            <option value="unlisted">unlisted</option>
-            <option value="public" selected>public</option>
-          </select>
-        </label>
+        <b>Format Utama CSV/Excel (otomatis dikenali):</b>
+        <code class="inline">Judul</code>, <code class="inline">Deskripsi_1</code> s/d <code class="inline">Deskripsi_20</code> (otomatis digabung per baris, sel kosong diabaikan),
+        <code class="inline">Tags</code>, <code class="inline">Playlist</code> (ID/URL/Nama Playlist &mdash; otomatis dimasukkan ke playlist),
+        <code class="inline">Thumbnail</code> (cocokkan nama file gambar di Bagian 3 atau URL), <code class="inline">Privacy</code>,
+        <code class="inline">Bulan</code> (mis. <code class="inline">Nov</code> / <code class="inline">11</code>), <code class="inline">Tanggal</code> (<code class="inline">18</code>), <code class="inline">Tahun</code> (<code class="inline">2026</code>), <code class="inline">Waktu</code> (mis. <code class="inline">7:00 PM</code> atau <code class="inline">19:00</code>),
+        <code class="inline">Nama_Stream</code> &amp; <code class="inline">Deskripsi_Stream</code> (otomatis buat/bind stream di Mode Live jika terisi), <code class="inline">Isi_Chatt</code> (otomatis kirim chat ke Live Chat jika terisi).
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;align-items:center;">
+          <label style="display:flex;align-items:center;gap:8px;margin:0;">Default Privacy (jika kosong):
+            <select id="newFormatPrivacy" style="width:auto;padding:7px 10px;">
+              <option value="public" selected>public</option>
+              <option value="unlisted">unlisted</option>
+              <option value="private">private</option>
+            </select>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;margin:0;">Zona Waktu kolom <code class="inline">Waktu</code>:
+            <select id="defaultTzSelect" style="width:auto;padding:7px 10px;">
+              <option value="WIB" selected>WIB (+07:00)</option>
+              <option value="WITA">WITA (+08:00)</option>
+              <option value="WIT">WIT (+09:00)</option>
+              <option value="UTC">UTC (+00:00)</option>
+              <option value="ET">US Eastern (EST/EDT)</option>
+              <option value="CT">US Central (CST/CDT)</option>
+              <option value="MT">US Mountain (MST/MDT)</option>
+              <option value="PT">US Pacific (PST/PDT)</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div id="warnBox"></div>
 
       <div class="table-wrap" style="margin-top:14px; display:none;" id="previewTableWrap">
         <table>
-          <thead><tr><th>Title</th><th>Date</th><th>Time</th><th>Privacy</th><th>Tags</th></tr></thead>
+          <thead><tr><th>Judul</th><th>Jadwal</th><th>Privacy</th><th>Tags</th><th>Ekstra (Playlist / Thumb / Stream / Chat)</th></tr></thead>
           <tbody id="previewTableBody"></tbody>
         </table>
         <div id="previewMore" class="small" style="padding:10px 12px;color:var(--muted);display:none;"></div>
       </div>
 
       <div class="note-box" style="margin-top:14px;">
-        <b>Format header wajib:</b> <code class="inline">title,date,time,description,privacy,tags</code><br>
-        Contoh: "Ngoding Malam",2026-09-20,20:00,"Ngoding santai",public,"ngoding" &bull; Date YYYY-MM-DD &bull; Time HH:mm WIB<br>
+        <b>Kompatibilitas:</b> Tetap mendukung delimiter koma (<code class="inline">,</code>) maupun titik koma (<code class="inline">;</code>) dari Excel Indonesia, format header lama (<code class="inline">title,date,time,description,privacy,tags</code>), dan format tanpa header.<br>
         Baris dengan tanggal yang sudah lewat akan otomatis di-skip saat upload, bukan menghentikan proses.
       </div>
     </div>
@@ -414,8 +430,8 @@
       <button class="btn-ghost" id="downloadTemplateBtn" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;">
         <span style="font-size:18px;">&#8595;</span>
         <span>
-          <div style="font-weight:500;font-size:13px;">Download Template CSV</div>
-          <div style="font-size:11px;color:var(--muted);">Siap pakai, 3 contoh event</div>
+          <div style="font-weight:500;font-size:13px;">Download Template CSV (Format 32 Kolom)</div>
+          <div style="font-size:11px;color:var(--muted);">Siap pakai: Judul, Deskripsi_1..20, Tags, Playlist, Thumbnail, Privacy, Bulan, Tanggal, Tahun, Waktu, Nama_Stream, Deskripsi_Stream, Isi_Chatt</div>
         </span>
       </button>
       <pre class="mono tpl" id="tplPreview"></pre>
@@ -578,10 +594,9 @@
   function ensureFreshToken(acc){ return Promise.resolve(acc.token); }
 
   // ================= KONSTANTA & STATE =================
-  var CSV_TEMPLATE = 'title,date,time,description,privacy,tags\n' +
-    '"Ngoding Malam",2026-09-20,20:00,"Ngoding santai bareng subscriber",public,"ngoding"\n' +
-    '"Podcast Bisnis",2026-09-21,19:30,"Bahas strategi bisnis online",unlisted,"bisnis,podcast"\n' +
-    '"QnA Subscriber",2026-09-22,20:00,"Jawab pertanyaan subscriber",private,"qna"\n';
+  var CSV_TEMPLATE = 'Judul,Deskripsi_1,Deskripsi_2,Deskripsi_3,Deskripsi_4,Deskripsi_5,Deskripsi_6,Deskripsi_7,Deskripsi_8,Deskripsi_9,Deskripsi_10,Deskripsi_11,Deskripsi_12,Deskripsi_13,Deskripsi_14,Deskripsi_15,Deskripsi_16,Deskripsi_17,Deskripsi_18,Deskripsi_19,Deskripsi_20,Tags,Playlist,Thumbnail,Privacy,Bulan,Tanggal,Tahun,Waktu,Nama_Stream,Deskripsi_Stream,Isi_Chatt\n' +
+    'Verde Valley vs Roosevelt Prep Live,Verde Valley vs Roosevelt Prep,⏰ : 5:00pm,📅 : Saturday,⚽ : Arizona High School Soccer,"The Roosevelt Preparatory Academy varsity soccer team has a neutral playoff match vs. Verde Valley (Sedona, AZ) today @ 5p.",,,,,,,,,,,,,,,"#soccer,#live","soccer,live,arizona",Live Soccer,thumb1.jpg,public,Nov,25,2026,7:00 PM,Stream Match 1,Live Stream Soccer,Selamat datang di live streaming!\n' +
+    'Match Day 2 Highlights,Pertandingan Seru Hari Ini,⏰ : 8:00pm,📅 : Sunday,⚽ : Playoff Match,Saksikan pertandingan langsung di channel ini.,,,,,,,,,,,,,,,"#playoff,#live","playoff,live,match",Live Soccer,thumb2.jpg,unlisted,Nov,26,2026,8:00 PM,Stream Match 2,Live Stream Match 2,Jangan lupa like dan subscribe!\n';
 
   // ---- daftar Client ID (multi). Migrasi otomatis dari penyimpanan lama yang cuma satu Client ID.
   var clientIds = (function(){
@@ -728,6 +743,7 @@
     csvFileInput: document.getElementById("csvFileInput"),
     warnBox: document.getElementById("warnBox"),
     newFormatPrivacy: document.getElementById("newFormatPrivacy"),
+    defaultTzSelect: document.getElementById("defaultTzSelect"),
     previewTableWrap: document.getElementById("previewTableWrap"),
     previewTableBody: document.getElementById("previewTableBody"),
 
@@ -1147,9 +1163,24 @@
   }
 
   // ================= CSV PARSING (manual, TIDAK PERNAH pakai SheetJS untuk .csv) =================
-  // Parser CSV state-machine: mendukung koma & newline di dalam field bertanda kutip, dan BOM UTF-8.
+  // Auto-deteksi pemisah koma (,) atau titik koma (;) dari Excel Indonesia, mendukung tanda kutip & BOM UTF-8.
+  function detectCsvDelimiter(text){
+    var firstLine = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/)[0] || "";
+    var commas = 0, semis = 0, inQ = false;
+    for (var i = 0; i < firstLine.length; i++){
+      var c = firstLine[i];
+      if (c === '"') inQ = !inQ;
+      else if (!inQ){
+        if (c === ",") commas++;
+        else if (c === ";") semis++;
+      }
+    }
+    return semis > commas ? ";" : ",";
+  }
+
   function parseCsvRecords(text){
     text = String(text).replace(/^\uFEFF/, "");
+    var delim = detectCsvDelimiter(text);
     var records = [], row = [], cur = "", inQuotes = false;
     for (var i = 0; i < text.length; i++){
       var ch = text[i];
@@ -1160,7 +1191,7 @@
         } else cur += ch;
       } else if (ch === '"'){
         inQuotes = true;
-      } else if (ch === ","){
+      } else if (ch === delim){
         row.push(cur.trim()); cur = "";
       } else if (ch === "\n" || ch === "\r"){
         if (ch === "\r" && text[i+1] === "\n") i++;
@@ -1177,27 +1208,37 @@
   function parseCsvText(text){
     var records = parseCsvRecords(text);
     if (records.length === 0) return [];
-    var headers = records[0].map(function(h){ return h.toLowerCase(); });
+    var headers = records[0].map(function(h){ return String(h || "").trim().toLowerCase(); });
     var rows = [];
     for (var i = 1; i < records.length; i++){
       var cells = records[i];
       var obj = {};
-      headers.forEach(function(h, idx){ obj[h] = cells[idx] !== undefined ? cells[idx] : ""; });
+      headers.forEach(function(h, idx){ if (h) obj[h] = cells[idx] !== undefined ? cells[idx] : ""; });
       rows.push(obj);
     }
     return rows;
   }
 
-  // ================= FORMAT BARU TANPA HEADER =================
-  // Tiap baris = 1 event. Kolom pertama = judul. Kolom berlabel "Date:" dan "Time:" = jadwal (zona waktu bebas, mis. CDT/PDT),
-  // dibaca APA ADANYA (tanggal & jam tidak diubah), zona waktunya disimpan di baris (_tz/_tzLabel) untuk konversi ke UTC saat kirim ke YouTube.
-  // Kolom berawalan "#" = hashtag (masuk deskripsi + tags). Kolom lain yang terisi = deskripsi (urut sesuai kolom).
+  // ================= PARSER JADWAL, ZONA WAKTU & FORMAT 32 KOLOM =================
   var TZ_FIXED = {
     UTC: 0, GMT: 0, Z: 0, WIB: 7, WITA: 8, WIT: 9,
     EST: -5, EDT: -4, CST: -6, CDT: -5, MST: -7, MDT: -6, PST: -8, PDT: -7, AKST: -9, AKDT: -8, HST: -10
   };
   var TZ_US_GENERIC = { ET: [-5, -4], CT: [-6, -5], MT: [-7, -6], PT: [-8, -7] };   // [standar, DST]
-  var MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+  var MONTHS = {
+    jan:1, januari:1, january:1,
+    feb:2, februari:2, february:2,
+    mar:3, maret:3, march:3,
+    apr:4, april:4,
+    may:5, mei:5,
+    jun:6, juni:6, june:6,
+    jul:7, juli:7, july:7,
+    aug:8, agu:8, agust:8, agustus:8, august:8,
+    sep:9, sept:9, september:9,
+    oct:10, okt:10, oktober:10, october:10,
+    nov:11, nop:11, november:11,
+    dec:12, des:12, desember:12, december:12
+  };
 
   function usDstOn(y, m, d){
     function nthSunday(mi, n){
@@ -1214,53 +1255,208 @@
     return null;
   }
   function cellLabelValue(cell, label){
-    // "🗓️ Date: Saturday, Sep 19, 2026" -> "Saturday, Sep 19, 2026"; label hanya dikenali di awal sel (setelah emoji/spasi)
     var re = new RegExp("^[^A-Za-z0-9#]*" + label + "\\s*:\\s*(.*)$", "i");
     var m = String(cell).match(re);
     return m ? m[1].trim() : null;
   }
   function pad2(n){ return (n < 10 ? "0" : "") + n; }
 
-  // Kembalikan { date:"YYYY-MM-DD", time:"HH:mm" (24 jam, sesuai file), tz:"-05:00", label:"CDT" }, atau { error:"..." }
+  function parseMonthValue(val){
+    var s = String(val == null ? "" : val).trim().toLowerCase().replace(/\.$/, "");
+    if (!s) return null;
+    if (/^\d{1,2}$/.test(s)){
+      var num = parseInt(s, 10);
+      return (num >= 1 && num <= 12) ? num : null;
+    }
+    if (MONTHS.hasOwnProperty(s)) return MONTHS[s];
+    var p3 = s.slice(0, 3);
+    if (MONTHS.hasOwnProperty(p3)) return MONTHS[p3];
+    return null;
+  }
+
+  function parseTimeFlexible(timeText, Y, M, D, fallbackTzLabel){
+    var tt = String(timeText == null ? "" : timeText).trim();
+    if (!tt) return { error: "kolom Waktu kosong" };
+    var h, mi, rest;
+    var t12 = tt.match(/(\d{1,2})(?:[:.](\d{2}))?(?:[:.]\d{2})?\s*([ap])\.?m\.?\s*([A-Za-z]{1,5})?/i);
+    if (t12){
+      h = parseInt(t12[1], 10);
+      if (h < 1 || h > 12) return { error: "jam 12-jam tidak valid (\"" + tt + "\")" };
+      h = (h % 12) + (t12[3].toLowerCase() === "p" ? 12 : 0);
+      mi = t12[2] ? parseInt(t12[2], 10) : 0;
+      rest = t12[4];
+    } else {
+      var t24 = tt.match(/(\d{1,2})[:.](\d{2})(?:[:.]\d{2})?\s*([A-Za-z]{1,5})?/);
+      if (!t24) return { error: "jam tidak terbaca (\"" + tt + "\")" };
+      h = parseInt(t24[1], 10); mi = parseInt(t24[2], 10); rest = t24[3];
+    }
+    if (h > 23 || mi > 59) return { error: "jam tidak valid (\"" + tt + "\")" };
+    var tzLabel = rest ? String(rest).toUpperCase() : (fallbackTzLabel || "WIB");
+    var off = tzOffsetHours(tzLabel, Y, M, D);
+    if (off === null) return { error: "zona waktu \"" + tzLabel + "\" belum dikenali" };
+    return {
+      time: pad2(h) + ":" + pad2(mi),
+      tz: (off < 0 ? "-" : "+") + pad2(Math.abs(off)) + ":00",
+      label: tzLabel
+    };
+  }
+
   function parseSchedule(dateText, timeText){
-    var dm = String(dateText || "").match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
+    var dm = String(dateText || "").match(/(jan|feb|mar|apr|may|mei|jun|jul|aug|agu|sep|oct|okt|nov|dec|des)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
     var Y, M, D;
-    if (dm){ M = MONTHS[dm[1].toLowerCase()]; D = parseInt(dm[2], 10); Y = parseInt(dm[3], 10); }
+    if (dm){ M = parseMonthValue(dm[1]); D = parseInt(dm[2], 10); Y = parseInt(dm[3], 10); }
     else {
       var im = String(dateText || "").match(/(\d{4})-(\d{2})-(\d{2})/);
       if (!im) return { error: "tanggal tidak terbaca (\"" + dateText + "\")" };
       Y = parseInt(im[1], 10); M = parseInt(im[2], 10); D = parseInt(im[3], 10);
     }
-    var tt = String(timeText || "");
-    var h, mi, rest;
-    var t12 = tt.match(/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\s*([A-Za-z]{1,5})?/i);
-    if (t12){
-      h = parseInt(t12[1], 10) % 12 + (t12[3].toLowerCase() === "p" ? 12 : 0);
-      mi = t12[2] ? parseInt(t12[2], 10) : 0;
-      rest = t12[4];
-    } else {
-      var t24 = tt.match(/(\d{1,2}):(\d{2})\s*([A-Za-z]{1,5})?/);
-      if (!t24) return { error: "jam tidak terbaca (\"" + timeText + "\")" };
-      h = parseInt(t24[1], 10); mi = parseInt(t24[2], 10); rest = t24[3];
-    }
-    if (h > 23 || mi > 59) return { error: "jam tidak valid (\"" + timeText + "\")" };
-    if (!rest) return { error: "zona waktu tidak ada di \"" + timeText + "\" (mis. CDT, PDT, EST)" };
-    var off = tzOffsetHours(rest, Y, M, D);
-    if (off === null) return { error: "zona waktu \"" + rest + "\" belum dikenali" };
+    var fallbackTz = (el.defaultTzSelect && el.defaultTzSelect.value) || "WIB";
+    var tp = parseTimeFlexible(timeText, Y, M, D, fallbackTz);
+    if (tp.error) return tp;
     return {
       date: Y + "-" + pad2(M) + "-" + pad2(D),
-      time: pad2(h) + ":" + pad2(mi),
-      tz: (off < 0 ? "-" : "+") + pad2(Math.abs(off)) + ":00",
-      label: String(rest).toUpperCase()
+      time: tp.time,
+      tz: tp.tz,
+      label: tp.label
     };
   }
 
+  function normalizePrivacy(val, fallback){
+    var p = String(val == null ? "" : val).trim().toLowerCase();
+    if (!p) return fallback || "public";
+    if (p === "public" || p === "publik") return "public";
+    if (p === "unlisted" || p === "tidak publik" || p === "tidak terdaftar") return "unlisted";
+    if (p === "private" || p === "pribadi") return "private";
+    return fallback || "public";
+  }
+
+  function cleanTagsValue(val){
+    return String(val == null ? "" : val)
+      .split(",")
+      .map(function(t){ return t.trim().replace(/^#+/, ""); })
+      .filter(Boolean)
+      .join(",");
+  }
+
+  // Deteksi format header:
+  // "custom32" = Judul, Deskripsi_1..20, Tags, Playlist, Thumbnail, Privacy, Bulan, Tanggal, Tahun, Waktu, Nama_Stream, Deskripsi_Stream, Isi_Chatt
+  // "legacy"   = title, date, time, description, privacy, tags
+  // "headerless" = tanpa header
+  function detectHeaderFormat(cells){
+    var low = (cells || []).map(function(c){ return String(c == null ? "" : c).trim().toLowerCase(); });
+    var hasJudul = low.indexOf("judul") !== -1;
+    var hasDescN = low.some(function(h){ return /^deskripsi_\d+$/.test(h); });
+    var hasIdDate = low.indexOf("bulan") !== -1 || low.indexOf("tanggal") !== -1 || low.indexOf("tahun") !== -1 || low.indexOf("waktu") !== -1;
+    if (hasJudul && (hasDescN || hasIdDate)) return "custom32";
+    if (low.indexOf("title") !== -1 && low.indexOf("date") !== -1 && low.indexOf("time") !== -1) return "legacy";
+    return "headerless";
+  }
+
   function looksLikeHeaderRow(cells){
-    var low = (cells || []).map(function(c){ return String(c).trim().toLowerCase(); });
-    return low.indexOf("title") !== -1 && low.indexOf("date") !== -1 && low.indexOf("time") !== -1;
+    return detectHeaderFormat(cells) !== "headerless";
   }
   function isBlankRow(cells){
-    return !(cells || []).some(function(c){ return String(c).trim() !== ""; });
+    return !(cells || []).some(function(c){ return String(c == null ? "" : c).trim() !== ""; });
+  }
+
+  // Konversi array-of-array (dengan baris header di index 0) -> array of objects dengan key lowercase
+  function aoaToObjects(aoa){
+    if (!aoa || aoa.length < 2) return [];
+    var headers = aoa[0].map(function(h){ return String(h == null ? "" : h).trim().toLowerCase(); });
+    var rows = [];
+    for (var i = 1; i < aoa.length; i++){
+      if (isBlankRow(aoa[i])) continue;
+      var obj = {};
+      headers.forEach(function(h, idx){ if (h) obj[h] = aoa[i][idx] !== undefined ? aoa[i][idx] : ""; });
+      rows.push(obj);
+    }
+    return rows;
+  }
+
+  // Parser khusus format 32 kolom: Judul, Deskripsi_1..Deskripsi_20, Tags, Playlist, Thumbnail, Privacy, Bulan, Tanggal, Tahun, Waktu, Nama_Stream, Deskripsi_Stream, Isi_Chatt
+  function processCustom32Rows(rows, fileName){
+    var problems = [];
+    if (!rows || rows.length === 0){
+      el.warnBox.innerHTML = '<div class="warn-box"><div class="warn-line"><span>&#9888;</span><span>File kosong atau tidak ada baris data</span></div></div>';
+      return;
+    }
+    var defaultPrivacy = (el.newFormatPrivacy && el.newFormatPrivacy.value) || "public";
+    var defaultTz = (el.defaultTzSelect && el.defaultTzSelect.value) || "WIB";
+
+    var parsed = rows.map(function(raw, idx){
+      var n = idx + 1;
+      var lower = {};
+      Object.keys(raw).forEach(function(k){ lower[String(k).trim().toLowerCase()] = raw[k]; });
+
+      // Gabungkan semua Deskripsi_1 .. Deskripsi_20 (atau Deskripsi_N berapapun) urut numerik
+      var descKeys = Object.keys(lower)
+        .filter(function(k){ return /^deskripsi_\d+$/.test(k); })
+        .sort(function(a, b){
+          return parseInt(a.split("_")[1], 10) - parseInt(b.split("_")[1], 10);
+        });
+      var descParts = [];
+      descKeys.forEach(function(k){
+        var v = String(lower[k] == null ? "" : lower[k]).trim();
+        if (v) descParts.push(v);
+      });
+      if (!descParts.length && lower.deskripsi){
+        var d0 = String(lower.deskripsi).trim();
+        if (d0) descParts.push(d0);
+      }
+
+      // Parse Bulan, Tanggal, Tahun, Waktu
+      var bulanRaw = lower.bulan;
+      var tglRaw = lower.tanggal;
+      var thnRaw = lower.tahun;
+      var waktuRaw = lower.waktu;
+
+      var M = parseMonthValue(bulanRaw);
+      var D = parseInt(String(tglRaw == null ? "" : tglRaw).trim(), 10);
+      var Y = parseInt(String(thnRaw == null ? "" : thnRaw).trim(), 10);
+      if (!isNaN(Y) && Y > 0 && Y < 100) Y += 2000;
+
+      var dateStr = "", timeStr = "", tzStr = "+07:00", tzLabel = defaultTz;
+      if (!M || isNaN(D) || D < 1 || D > 31 || isNaN(Y) || Y < 2000){
+        problems.push("Baris " + n + ": Bulan/Tanggal/Tahun tidak valid (Bulan=\"" + (bulanRaw || "") + "\", Tanggal=\"" + (tglRaw || "") + "\", Tahun=\"" + (thnRaw || "") + "\")");
+      } else {
+        dateStr = Y + "-" + pad2(M) + "-" + pad2(D);
+        var tp = parseTimeFlexible(waktuRaw, Y, M, D, defaultTz);
+        if (tp.error){
+          problems.push("Baris " + n + ": " + tp.error);
+        } else {
+          timeStr = tp.time;
+          tzStr = tp.tz;
+          tzLabel = tp.label;
+        }
+      }
+
+      return {
+        _id: genId(),
+        title: String(lower.judul == null ? "" : lower.judul).trim(),
+        date: dateStr,
+        time: timeStr,
+        _tz: tzStr,
+        _tzLabel: tzLabel,
+        description: descParts.join("\n"),
+        privacy: normalizePrivacy(lower.privacy, defaultPrivacy),
+        tags: cleanTagsValue(lower.tags),
+        playlist: String(lower.playlist == null ? "" : lower.playlist).trim(),
+        thumbnail: String(lower.thumbnail == null ? "" : lower.thumbnail).trim(),
+        streamName: String(lower.nama_stream == null ? "" : lower.nama_stream).trim(),
+        streamDesc: String(lower.deskripsi_stream == null ? "" : lower.deskripsi_stream).trim(),
+        chatMessage: String(lower.isi_chatt != null ? lower.isi_chatt : (lower.isi_chat != null ? lower.isi_chat : "")).trim(),
+        streamKey: "",
+        streamUrl: "",
+        status: "ready",
+        message: "",
+        videoId: null,
+        _pastDate: false,
+        _invalid: false
+      };
+    });
+
+    log("Format CSV 32 kolom terdeteksi (" + fileName + "): Deskripsi_1..20 digabung, Bulan/Tanggal/Tahun/Waktu dikonversi dari " + defaultTz + ".", "success");
+    finishParse(parsed, problems, fileName, true);
   }
 
   // arrays = array of array (sel per baris). Hasil: { rows:[...objek standar...], problems:[...] }
@@ -1290,6 +1486,7 @@
         description: descLines.join("\n") + (hashtags.length ? "\n\n" + hashtags.join(" ") : ""),
         privacy: privacy,
         tags: hashtags.map(function(h){ return h.replace(/^#+/, ""); }).filter(Boolean).join(","),
+        playlist: "", thumbnail: "", streamName: "", streamDesc: "", chatMessage: "", streamKey: "", streamUrl: "",
         status: "ready", message: "", videoId: null, _pastDate: false, _invalid: false
       };
       if (dateText === null || timeText === null){
@@ -1320,16 +1517,16 @@
     document.head.appendChild(s);
   }
 
-  // Jaga-jaga kalau Excel masih mengirim tanggal/jam sebagai angka serial atau objek Date.
+  // Jaga-jaga kalau Excel mengirim tanggal/jam sebagai angka serial atau objek Date.
   function normalizeExcelCell(key, val){
-    var k = String(key).toLowerCase();
+    var k = String(key).trim().toLowerCase();
     function pad(n){ return (n < 10 ? "0" : "") + n; }
     if (val instanceof Date && !isNaN(val.getTime())){
       if (k === "date") return val.getFullYear() + "-" + pad(val.getMonth()+1) + "-" + pad(val.getDate());
-      if (k === "time") return pad(val.getHours()) + ":" + pad(val.getMinutes());
+      if (k === "time" || k === "waktu") return pad(val.getHours()) + ":" + pad(val.getMinutes());
     }
     if (typeof val === "number"){
-      if (k === "time" && val >= 0 && val < 1){
+      if ((k === "time" || k === "waktu") && val >= 0 && val < 1){
         var mins = Math.round(val * 24 * 60);
         return pad(Math.floor(mins / 60) % 24) + ":" + pad(mins % 60);
       }
@@ -1351,17 +1548,21 @@
       return;
     }
     if (ext === "csv"){
-      // .csv SELALU pakai parser manual di atas, TIDAK PERNAH lewat SheetJS,
-      // supaya kolom tanggal (2026-09-25) tidak "ditebak" jadi serial number Excel (misal 46290.29).
       var reader = new FileReader();
       reader.onload = function(e){
         var records = parseCsvRecords(e.target.result);
-        if (records.length && !looksLikeHeaderRow(records[0])){
-          processHeaderless(records, file.name);
+        if (!records.length){
+          el.warnBox.innerHTML = '<div class="warn-box"><div class="warn-line"><span>&#9888;</span><span>File CSV kosong</span></div></div>';
           return;
         }
-        var rows = parseCsvText(e.target.result);
-        processRows(rows, file.name);
+        var fmt = detectHeaderFormat(records[0]);
+        if (fmt === "custom32"){
+          processCustom32Rows(aoaToObjects(records), file.name);
+        } else if (fmt === "legacy"){
+          processRows(parseCsvText(e.target.result), file.name);
+        } else {
+          processHeaderless(records, file.name);
+        }
       };
       reader.readAsText(file);
     } else {
@@ -1373,7 +1574,12 @@
           var wb = window.XLSX.read(data, { type: "array", cellDates: true });
           var sheet = wb.Sheets[wb.SheetNames[0]];
           var aoa = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false, blankrows: false });
-          if (aoa.length && !looksLikeHeaderRow(aoa[0])){
+          if (!aoa.length){
+            el.warnBox.innerHTML = '<div class="warn-box"><div class="warn-line"><span>&#9888;</span><span>Sheet Excel kosong</span></div></div>';
+            return;
+          }
+          var fmt = detectHeaderFormat(aoa[0]);
+          if (fmt === "headerless"){
             processHeaderless(aoa, file.name);
             return;
           }
@@ -1383,7 +1589,8 @@
             Object.keys(r).forEach(function(k){ o[k] = normalizeExcelCell(k, r[k]); });
             return o;
           });
-          processRows(rows, file.name);
+          if (fmt === "custom32") processCustom32Rows(rows, file.name);
+          else processRows(rows, file.name);
         };
         reader.readAsArrayBuffer(file);
       });
@@ -1411,21 +1618,27 @@
     var missing = required.filter(function(h){ return headerKeys.indexOf(h) === -1; });
     if (missing.length > 0) problems.push("Header wajib hilang: " + missing.join(", ") + " - di file " + fileName);
 
+    var defaultPrivacy = (el.newFormatPrivacy && el.newFormatPrivacy.value) || "private";
     var parsed = rows.map(function(raw){
       var lower = {};
       Object.keys(raw).forEach(function(k){ lower[k.toLowerCase()] = raw[k]; });
       var date = String(lower.date || "").trim().slice(0, 10);
       var time = String(lower.time || "").trim().slice(0, 5);
-      var privacyRaw = String(lower.privacy || "private").toLowerCase();
-      var privacy = ["public", "private", "unlisted"].indexOf(privacyRaw) !== -1 ? privacyRaw : "private";
       return {
         _id: genId(),
         title: String(lower.title || "").trim(),
         date: date,
         time: time,
         description: String(lower.description || "").trim(),
-        privacy: privacy,
-        tags: String(lower.tags || "").trim(),
+        privacy: normalizePrivacy(lower.privacy, defaultPrivacy),
+        tags: cleanTagsValue(lower.tags),
+        playlist: String(lower.playlist || "").trim(),
+        thumbnail: String(lower.thumbnail || "").trim(),
+        streamName: String(lower.nama_stream || "").trim(),
+        streamDesc: String(lower.deskripsi_stream || "").trim(),
+        chatMessage: String(lower.isi_chatt || lower.isi_chat || "").trim(),
+        streamKey: "",
+        streamUrl: "",
         status: "ready",
         message: "",
         videoId: null,
@@ -1455,6 +1668,9 @@
     selectedIds = {};
     events.forEach(function(r){ selectedIds[r._id] = !r._invalid; }); // baris invalid tidak ikut terpilih otomatis
 
+    if (el.liveThumbChk && parsed.some(function(r){ return !!r.thumbnail; })){
+      el.liveThumbChk.checked = true;
+    }
     renderWarnings(problems);
     renderPreviewTable();
     renderEventsTable();
@@ -1487,12 +1703,17 @@
     el.previewTableWrap.style.display = "block";
     var rowsHtml = "";
     events.slice(0, 20).forEach(function(r){
+      var extras = [];
+      if (r.playlist) extras.push("PL: " + r.playlist);
+      if (r.thumbnail) extras.push("Thumb: " + r.thumbnail);
+      if (r.streamName) extras.push("Stream: " + r.streamName);
+      if (r.chatMessage) extras.push("Chat: " + r.chatMessage.slice(0, 28) + (r.chatMessage.length > 28 ? "…" : ""));
       rowsHtml += '<tr>' +
-        '<td style="max-width:180px;">' + escapeHtml(r.title) + (r._pastDate ? ' <span style="color:#fca5a5;">(lewat)</span>' : '') + '</td>' +
-        '<td class="mono">' + escapeHtml(r.date) + '</td>' +
-        '<td class="mono">' + escapeHtml(r.time) + (r._tzLabel ? ' ' + escapeHtml(r._tzLabel) : '') + '</td>' +
+        '<td style="max-width:200px;">' + escapeHtml(r.title) + (r._pastDate ? ' <span style="color:#fca5a5;">(lewat)</span>' : '') + '</td>' +
+        '<td class="mono" style="white-space:nowrap;">' + escapeHtml(r.date || "-") + '<br>' + escapeHtml(r.time || "-") + ' ' + escapeHtml(timeLabel(r)) + '</td>' +
         '<td><span class="badge-privacy ' + r.privacy + '">' + r.privacy + '</span></td>' +
-        '<td style="max-width:140px;color:var(--muted);">' + escapeHtml(r.tags) + '</td>' +
+        '<td style="max-width:130px;color:var(--muted);">' + escapeHtml(r.tags || "-") + '</td>' +
+        '<td style="max-width:200px;color:var(--muted);font-size:11px;">' + (extras.length ? escapeHtml(extras.join(" • ")) : "-") + '</td>' +
         '</tr>';
     });
     el.previewTableBody.innerHTML = rowsHtml;
@@ -1544,10 +1765,11 @@
       (r.date || "") + " " + (r.time || "") + " " + timeLabel(r), utc,
       r.privacy, r.mode === "live" ? "live" : "video",
       watchUrl(r.videoId), studioUrl(r.videoId, r.mode),
-      r.channelTitle || r.uploadedVia || "", r.channelId || "", r.createdAt || ""
+      r.channelTitle || r.uploadedVia || "", r.channelId || "",
+      r.playlist || "", r.streamName || "", r.streamKey || "", r.chatMessage || "", r.createdAt || ""
     ];
   }
-  var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "channel", "channel_id", "dibuat_pada"];
+  var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "channel", "channel_id", "playlist", "nama_stream", "stream_key", "isi_chatt", "dibuat_pada"];
 
   function exportEvents(onlyLive){
     var list = doneRows(onlyLive);
@@ -1648,7 +1870,10 @@
                   method: "POST",
                   headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
                   body: JSON.stringify({
-                    snippet: { title: String(ur.title).slice(0, 100) },
+                    snippet: {
+                      title: String(ur.streamName || ur.title).slice(0, 100),
+                      description: String(ur.streamDesc || "")
+                    },
                     cdn: { frameRate: "variable", ingestionType: "rtmp", resolution: "variable" },
                     contentDetails: { isReusable: true }
                   })
@@ -1776,7 +2001,15 @@
             '<span>' +
               '<div style="font-weight:500;">' + escapeHtml(r.title || "(tanpa judul)") + (r._invalid ? ' <span style="color:#fca5a5;font-size:10px;">(data tidak valid)</span>' : '') + '</div>' +
               '<div class="mono" style="font-size:11px;color:var(--muted);margin-top:2px;">' + escapeHtml(r.date) + ' &bull; ' + escapeHtml(r.time) + ' ' + escapeHtml(timeLabel(r)) + ' &bull; ' + utcLabel + ' UTC &bull; ' + (appMode === "live" ? 'jadwal live' : 'auto-publish') + '</div>' +
-              '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + escapeHtml(r.description) + '</div>' +
+              '<div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:pre-line;max-height:60px;overflow:hidden;">' + escapeHtml(r.description) + '</div>' +
+              (function(){
+                var meta = [];
+                if (r.playlist) meta.push("Playlist: " + r.playlist);
+                if (r.thumbnail) meta.push("Thumb: " + r.thumbnail);
+                if (r.streamName) meta.push("Stream: " + r.streamName + (r.streamKey ? " [Key: " + r.streamKey + "]" : ""));
+                if (r.chatMessage) meta.push("Chat: " + r.chatMessage.slice(0, 40) + (r.chatMessage.length > 40 ? "…" : ""));
+                return meta.length ? '<div style="font-size:10.5px;color:#93c5fd;margin-top:3px;">' + escapeHtml(meta.join(" • ")) + '</div>' : '';
+              })() +
             '</span>' +
           '</label>' +
         '</td>' +
@@ -2470,6 +2703,16 @@
   function pickImageForRow(row){
     if (!userImages.length) return null;
     if (!row) return userImages[0].img;
+    // Jika kolom Thumbnail di CSV diisi nama file (mis. thumb1.jpg atau C:\folder\thumb1.jpg), cari yang cocok di galeri gambar
+    if (row.thumbnail && !/^https?:\/\//i.test(row.thumbnail)){
+      var target = String(row.thumbnail).replace(/^.*[\\\/]/, "").trim().toLowerCase();
+      var targetNoExt = target.replace(/\.[^.]+$/, "");
+      for (var j = 0; j < userImages.length; j++){
+        var nm = String(userImages[j].name || "").trim().toLowerCase();
+        var nmNoExt = nm.replace(/\.[^.]+$/, "");
+        if (nm === target || (targetNoExt && nmNoExt === targetNoExt)) return userImages[j].img;
+      }
+    }
     var i = events.indexOf(row);
     if (i < 0) i = 0;
     return userImages[i % userImages.length].img;
@@ -2519,6 +2762,23 @@
 
   // Render satu gambar thumbnail 1280x720 (JPEG, dijaga < 2 MB sesuai batas thumbnails.set). cb(err, blob).
   function renderThumbnailForRow(row, cb){
+    // Jika kolom Thumbnail berisi URL gambar (http/https), coba ambil langsung; jika gagal CORS, lanjut ke canvas lokal
+    if (row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
+      fetch(row.thumbnail).then(function(r){
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      }).then(function(b){
+        if (b && b.size > 0 && b.size <= 2 * 1024 * 1024 && /^image\//i.test(b.type || "")){
+          cb(null, b);
+        } else {
+          renderThumbnailFromCanvas(row, cb);
+        }
+      }).catch(function(){ renderThumbnailFromCanvas(row, cb); });
+      return;
+    }
+    renderThumbnailFromCanvas(row, cb);
+  }
+  function renderThumbnailFromCanvas(row, cb){
     try {
       var c = document.createElement("canvas");
       c.width = VIDEO_W; c.height = VIDEO_H;
@@ -2796,11 +3056,200 @@
           }).catch(function(e){ warnings.push("tag: " + (e.message || e)); next(); });
         };
 
-        stepThumb(function(){ stepTags(function(){
-          cb({ ok: true, videoId: videoId, warnings: warnings, unitsUsed: costUsed, error: warnings.length ? warnings.join("; ") : null });
-        }); });
+        // ---- tahap 4: buat / reuse & bind Stream jika kolom Nama_Stream terisi ----
+        var stepStream = function(next){
+          if (!row.streamName){ next(); return; }
+          ensureStreamForRow(row, token, function(errS, stInfo, uUsed){
+            costUsed += (uUsed || 0);
+            if (errS){ warnings.push("stream: " + errS); next(); return; }
+            fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?part=id,contentDetails&id=" + encodeURIComponent(videoId) + "&streamId=" + encodeURIComponent(stInfo.id), {
+              method: "POST",
+              headers: { "Authorization": "Bearer " + token }
+            }).then(function(r){
+              costUsed += 50;
+              if (r.ok){
+                row.streamKey = stInfo.key || "";
+                row.streamUrl = stInfo.url || "";
+                next();
+              } else {
+                return r.text().then(function(t){
+                  warnings.push("bind stream gagal (" + r.status + ")");
+                  next();
+                });
+              }
+            }).catch(function(e){ warnings.push("bind stream: " + (e.message || e)); next(); });
+          });
+        };
+
+        // ---- tahap 5: masukkan ke Playlist jika kolom Playlist terisi ----
+        var stepPlaylist = function(next){
+          if (!row.playlist){ next(); return; }
+          assignVideoToPlaylist(row.playlist, videoId, token, row.privacy, function(errP, uUsed){
+            costUsed += (uUsed || 0);
+            if (errP) warnings.push("playlist: " + errP);
+            next();
+          });
+        };
+
+        // ---- tahap 6: kirim pesan awal ke Live Chat jika kolom Isi_Chatt terisi ----
+        var stepChat = function(next){
+          var chatId = bc.snippet && bc.snippet.liveChatId;
+          if (!row.chatMessage){ next(); return; }
+          if (!chatId){ warnings.push("chat: liveChatId belum tersedia dari YouTube"); next(); return; }
+          fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+            body: JSON.stringify({
+              snippet: {
+                liveChatId: chatId,
+                type: "textMessageEvent",
+                textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
+              }
+            })
+          }).then(function(r){
+            costUsed += 50;
+            if (r.ok){ next(); return; }
+            return r.text().then(function(t){
+              warnings.push("chat gagal (" + r.status + ")");
+              next();
+            });
+          }).catch(function(e){ warnings.push("chat: " + (e.message || e)); next(); });
+        };
+
+        stepThumb(function(){
+          stepTags(function(){
+            stepStream(function(){
+              stepPlaylist(function(){
+                stepChat(function(){
+                  cb({ ok: true, videoId: videoId, warnings: warnings, unitsUsed: costUsed, error: warnings.length ? warnings.join("; ") : null });
+                });
+              });
+            });
+          });
+        });
       });
     }).catch(function(e){ cb({ ok: false, error: e.message || String(e) }); });
+  }
+
+  // ---- Cache & Helper untuk kolom Nama_Stream, Deskripsi_Stream, dan Playlist ----
+  var _streamCacheByToken = {};    // tokenKey -> { [streamTitleLower]: { id, key, url } }
+  var _playlistCacheByToken = {};  // tokenKey -> { loaded: bool, map: { [titleLower]: playlistId } }
+
+  function tokenCacheKey(token){ return String(token || "").slice(-24); }
+
+  function ensureStreamForRow(row, token, cb){
+    var tk = tokenCacheKey(token);
+    var keyLower = String(row.streamName || "").trim().toLowerCase();
+    if (!_streamCacheByToken[tk]) _streamCacheByToken[tk] = {};
+    if (_streamCacheByToken[tk][keyLower]){
+      cb(null, _streamCacheByToken[tk][keyLower], 0);
+      return;
+    }
+    var used = 0;
+    // Cek stream yang sudah ada di channel agar nama stream yang sama bisa dipakai ulang (hemat kuota)
+    fetch("https://www.googleapis.com/youtube/v3/liveStreams?part=id,snippet,cdn&mine=true&maxResults=50", {
+      headers: { "Authorization": "Bearer " + token }
+    }).then(function(r){ used += 1; return r.ok ? r.json() : { items: [] }; })
+      .catch(function(){ return { items: [] }; })
+      .then(function(d){
+        (d.items || []).forEach(function(it){
+          var t = String((it.snippet && it.snippet.title) || "").trim().toLowerCase();
+          var info = it.cdn && it.cdn.ingestionInfo;
+          if (t && info){
+            _streamCacheByToken[tk][t] = { id: it.id, key: info.streamName || "", url: info.ingestionAddress || "" };
+          }
+        });
+        if (_streamCacheByToken[tk][keyLower]){
+          cb(null, _streamCacheByToken[tk][keyLower], used);
+          return;
+        }
+        // Belum ada -> buat baru dengan Nama_Stream & Deskripsi_Stream
+        fetch("https://www.googleapis.com/youtube/v3/liveStreams?part=snippet,cdn,contentDetails,status", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+          body: JSON.stringify({
+            snippet: { title: String(row.streamName).slice(0, 100), description: String(row.streamDesc || "") },
+            cdn: { frameRate: "variable", ingestionType: "rtmp", resolution: "variable" },
+            contentDetails: { isReusable: true }
+          })
+        }).then(function(r){
+          used += 50;
+          return r.text().then(function(t){
+            if (!r.ok){ cb("buat stream gagal (" + r.status + ")", null, used); return; }
+            var ns = {}; try { ns = JSON.parse(t); } catch (e){}
+            var info = ns.cdn && ns.cdn.ingestionInfo;
+            var obj = { id: ns.id, key: (info && info.streamName) || "", url: (info && info.ingestionAddress) || "" };
+            _streamCacheByToken[tk][keyLower] = obj;
+            cb(null, obj, used);
+          });
+        }).catch(function(e){ cb(e.message || String(e), null, used); });
+      });
+  }
+
+  function extractPlaylistIdFromCell(val){
+    var s = String(val || "").trim();
+    var m = s.match(/[?&]list=([A-Za-z0-9_-]{12,})/);
+    if (m) return m[1];
+    if (/^(PL|UU|FL|RD|OLAK5uy_)[A-Za-z0-9_-]{10,}$/.test(s)) return s;
+    return null;
+  }
+
+  function assignVideoToPlaylist(playlistCell, videoId, token, privacy, cb){
+    var used = 0;
+    var addItem = function(plId){
+      fetch("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify({ snippet: { playlistId: plId, resourceId: { kind: "youtube#video", videoId: videoId } } })
+      }).then(function(r){
+        used += 50;
+        if (r.ok){ cb(null, used); return; }
+        return r.text().then(function(t){ cb("gagal masukkan ke playlist (" + r.status + ")", used); });
+      }).catch(function(e){ cb(e.message || String(e), used); });
+    };
+
+    var directId = extractPlaylistIdFromCell(playlistCell);
+    if (directId){ addItem(directId); return; }
+
+    var tk = tokenCacheKey(token);
+    var plLower = String(playlistCell).trim().toLowerCase();
+    if (!_playlistCacheByToken[tk]) _playlistCacheByToken[tk] = { loaded: false, map: {} };
+    var cache = _playlistCacheByToken[tk];
+
+    var resolveByName = function(){
+      if (cache.map[plLower]){ addItem(cache.map[plLower]); return; }
+      fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify({
+          snippet: { title: String(playlistCell).trim().slice(0, 150) },
+          status: { privacyStatus: privacy || "public" }
+        })
+      }).then(function(r){
+        used += 50;
+        return r.text().then(function(t){
+          if (!r.ok){ cb("buat playlist gagal (" + r.status + ")", used); return; }
+          var d = {}; try { d = JSON.parse(t); } catch (e){}
+          if (!d.id){ cb("ID playlist baru kosong", used); return; }
+          cache.map[plLower] = d.id;
+          addItem(d.id);
+        });
+      }).catch(function(e){ cb(e.message || String(e), used); });
+    };
+
+    if (cache.loaded){ resolveByName(); return; }
+    fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50", {
+      headers: { "Authorization": "Bearer " + token }
+    }).then(function(r){ used += 1; return r.ok ? r.json() : { items: [] }; })
+      .catch(function(){ return { items: [] }; })
+      .then(function(d){
+        cache.loaded = true;
+        (d.items || []).forEach(function(it){
+          var t = String((it.snippet && it.snippet.title) || "").trim().toLowerCase();
+          if (t && it.id) cache.map[t] = it.id;
+        });
+        resolveByName();
+      });
   }
 
   // Set ulang thumbnail utk 1 videoId yang sudah ada (dipakai fitur "Perbaiki Thumbnail Gagal"), dengan retry 429 sama seperti stepThumb di atas.
@@ -3408,7 +3857,13 @@
           var videoJson;
           try { videoJson = JSON.parse(xhr.responseText); }
           catch (e){ cb({ ok: false, error: "Response upload tidak valid JSON" }); return; }
-          cb({ ok: true, videoId: videoJson.id, error: null });
+          if (row.playlist){
+            assignVideoToPlaylist(row.playlist, videoJson.id, token, row.privacy, function(errP){
+              cb({ ok: true, videoId: videoJson.id, warnings: errP ? ["playlist: " + errP] : [], error: errP || null });
+            });
+          } else {
+            cb({ ok: true, videoId: videoJson.id, error: null });
+          }
         } else {
           var cls2 = classifyApiError(xhr.status, xhr.responseText);
           cb({ ok: false, quotaExceeded: cls2.quota, authExpired: cls2.auth, uploadLimit: cls2.uploadLimit, channelSuspended: cls2.channelSuspended, error: "Upload gagal (" + xhr.status + "): " + String(xhr.responseText).slice(0, 200) });
@@ -3763,6 +4218,25 @@
     if (!isNaN(v) && v >= 1){ limitPerAccount = v; renderAccountsList(); saveState(); }
   });
 
+  if (el.defaultTzSelect) el.defaultTzSelect.addEventListener("change", function(){
+    if (!events.length) return;
+    var tzLbl = el.defaultTzSelect.value || "WIB";
+    events.forEach(function(r){
+      if (!r.date) return;
+      var parts = r.date.split("-");
+      if (parts.length !== 3) return;
+      var off = tzOffsetHours(tzLbl, parseInt(parts[0], 10), parseInt(parts[1], 10), parseInt(parts[2], 10));
+      if (off !== null){
+        r._tz = (off < 0 ? "-" : "+") + pad2(Math.abs(off)) + ":00";
+        r._tzLabel = tzLbl;
+        var utc = rowUtcIso(r);
+        r._pastDate = !!(utc && isPastUtc(utc));
+      }
+    });
+    renderPreviewTable();
+    renderEventsTable();
+    log("Zona waktu semua event diperbarui ke " + tzLbl + ".", "info");
+  });
   el.pickFileBtn.addEventListener("click", function(){ el.csvFileInput.click(); });
   el.csvFileInput.addEventListener("change", function(e){ handleFiles(e.target.files); });
   el.dropZone.addEventListener("click", function(e){
