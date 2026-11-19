@@ -132,6 +132,9 @@
   details.brand-guide ol{margin:10px 0 0 18px;padding:0;}
   details.brand-guide li{margin-bottom:6px;}
   details.brand-guide a{color:#60a5fa;text-decoration:underline;}
+  .row-thumb{width:76px;height:43px;border-radius:6px;border:1px solid var(--border);object-fit:cover;background:#000;flex-shrink:0;}
+  .pin-btn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);color:#fcd34d;text-decoration:none;}
+  .pin-btn:hover{background:rgba(245,158,11,.3);}
 </style>
 </head>
 <body>
@@ -337,8 +340,12 @@
         <input type="checkbox" id="overlayTitleChk"> Tempel judul event di atas gambar upload
       </label>
 
-      <label class="checkbox-lbl" id="liveThumbWrap" style="display:none;margin-bottom:12px;color:#fcd34d;">
-        <input type="checkbox" id="liveThumbChk"> Set thumbnail otomatis di Mode Jadwal Live (50 unit/event &bull; nonaktifkan jika ingin hemat kuota / hindari 429)
+      <label class="checkbox-lbl" id="liveThumbWrap" style="display:flex;margin-bottom:8px;color:#fcd34d;">
+        <input type="checkbox" id="liveThumbChk" checked> Langsung ubah gambar thumbnail di YouTube (<code class="inline">thumbnails.set</code>, 50 unit/event &bull; aktif di Mode Live &amp; Video)
+      </label>
+
+      <label class="checkbox-lbl" id="corsProxyThumbWrap" style="display:flex;margin-bottom:12px;color:#93c5fd;">
+        <input type="checkbox" id="corsProxyThumbChk" checked> Gunakan proxy gambar (<code class="inline">wsrv.nl</code>) otomatis jika URL kolom <code class="inline">Thumbnail</code> kena CORS
       </label>
 
       <div class="preview-assets" id="assetPreview"></div>
@@ -374,24 +381,29 @@
           </div>
         </div>
 
-        <button class="btn-ghost" id="fixThumbsBtn" style="display:none;width:100%;margin-bottom:14px;">Perbaiki Thumbnail Gagal</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn-ghost" id="fixThumbsBtn" style="display:none;flex:1;min-width:180px;">Perbaiki Thumbnail Gagal</button>
+          <button class="btn-ghost" id="updateAllThumbsBtn" style="display:none;flex:1;min-width:180px;">&#128444; Ubah Thumbnail Event Sukses</button>
+          <button class="btn-ghost" id="retryChatBtn" style="display:none;flex:1;min-width:180px;">&#128172; Kirim Ulang Chat Gagal</button>
+        </div>
 
         <div id="exportWrap" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:12px;">
-          <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Hasil Upload: ID, Link &amp; Channel <span id="exportCountLabel" style="font-weight:400;color:var(--muted);"></span></div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Hasil Upload: ID, Link, Channel, Chat &amp; Pin <span id="exportCountLabel" style="font-weight:400;color:var(--muted);"></span></div>
           <div class="small" style="color:var(--muted);margin-bottom:10px;">
-            CSV berisi <code class="inline">videoId</code>, judul, jadwal, jenis, link, nama channel &amp; ID channel. File "ID Event" bisa langsung dipilih di Tool 2 (Langkah 1).
+            CSV berisi <code class="inline">videoId</code>, judul, jadwal, link watch/studio/live chat, channel, playlist, stream key, <code class="inline">live_chat_id</code>, <code class="inline">chat_message_id</code>, &amp; <code class="inline">isi_chatt</code>.
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-white" id="exportIdsBtn" style="flex:1;min-width:170px;">&#8595; Unduh ID Event (Tool 2)</button>
-            <button class="btn-ghost" id="exportAllBtn" style="flex:1;min-width:170px;">&#8595; Unduh Semua Hasil</button>
-            <button class="btn-ghost" id="copyIdsBtn" style="flex:1;min-width:110px;">Salin ID</button>
-            <button class="btn-ghost" id="copyLinksBtn" style="flex:1;min-width:110px;">Salin Link</button>
+            <button class="btn-white" id="exportIdsBtn" style="flex:1;min-width:165px;">&#8595; Unduh ID Event (Tool 2)</button>
+            <button class="btn-ghost" id="exportAllBtn" style="flex:1;min-width:165px;">&#8595; Unduh Semua Hasil</button>
+            <button class="btn-ghost" id="copyIdsBtn" style="flex:1;min-width:105px;">Salin ID</button>
+            <button class="btn-ghost" id="copyLinksBtn" style="flex:1;min-width:105px;">Salin Link</button>
           </div>
-          <div style="margin-top:8px;">
-            <button class="btn-ghost" id="exportKeysBtn" style="width:100%;">&#128273; Unduh Stream Key (Channel, Event, Key)</button>
-            <div class="small" style="color:var(--muted);margin-top:6px;">
-              CSV terpisah, hanya berisi nama channel, nama event &amp; stream key. <b>Tiap judul event dapat stream key sendiri (berbeda), walau satu channel</b>; key baru dibuat otomatis kalau belum ada. Stream key bersifat rahasia, jangan dibagikan sembarangan.
-            </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn-ghost" id="exportKeysBtn" style="flex:1;min-width:200px;">&#128273; Unduh Stream Key (CSV)</button>
+            <button class="btn-ghost" id="exportPinScriptBtn" style="flex:1;min-width:200px;color:#fcd34d;">&#128204; Unduh Script Auto-Pin Chat (.py)</button>
+          </div>
+          <div class="small" style="color:var(--muted);margin-top:6px;">
+            <b>Info Pin Chat:</b> YouTube Data API v3 resmi mendukung kirim chat (<code class="inline">liveChat/messages</code>), tetapi <b>belum menyediakan endpoint publik untuk Pin Chat</b>. Gunakan tombol <b>&#128204; Pin Chat</b> di tiap baris tabel atau unduh <b>Script Auto-Pin Chat (.py Playwright)</b> untuk pin otomatis lewat profil Chrome lokal (otomatis skip jika sudah di-pin, pin jika chat sudah ada, atau kirim+pin jika masih kosong).
           </div>
         </div>
 
@@ -755,6 +767,7 @@
     overlayTitleChk: document.getElementById("overlayTitleChk"),
     liveThumbWrap: document.getElementById("liveThumbWrap"),
     liveThumbChk: document.getElementById("liveThumbChk"),
+    corsProxyThumbChk: document.getElementById("corsProxyThumbChk"),
     imgModePill: document.getElementById("imgModePill"),
     assetPreview: document.getElementById("assetPreview"),
 
@@ -774,6 +787,8 @@
     clearLogBtn: document.getElementById("clearLogBtn"),
     downloadLogBtn: document.getElementById("downloadLogBtn"),
     fixThumbsBtn: document.getElementById("fixThumbsBtn"),
+    updateAllThumbsBtn: document.getElementById("updateAllThumbsBtn"),
+    retryChatBtn: document.getElementById("retryChatBtn"),
     restoreBanner: document.getElementById("restoreBanner"),
 
     exportWrap: document.getElementById("exportWrap"),
@@ -783,6 +798,7 @@
     copyIdsBtn: document.getElementById("copyIdsBtn"),
     copyLinksBtn: document.getElementById("copyLinksBtn"),
     exportKeysBtn: document.getElementById("exportKeysBtn"),
+    exportPinScriptBtn: document.getElementById("exportPinScriptBtn"),
     plExportBtn: document.getElementById("plExportBtn"),
     downloadTemplateBtn: document.getElementById("downloadTemplateBtn"),
     tplPreview: document.getElementById("tplPreview"),
@@ -852,7 +868,7 @@
         'Jadwal harus di masa depan dan &ldquo;cukup dekat&rdquo; (batas Google tidak dipublikasikan, kalau ditolak coba tanggal lebih dekat). Render video tidak dipakai.'
       : '<b>Mode Upload Video.</b> Tiap event di-render jadi video WebM 5 detik lalu diupload. Kuota: <b>' + eventsPerDayPerClient("video") + ' upload/hari per Client ID</b> (bucket sendiri, 1 unit/upload). ' +
         'Tidak butuh live streaming aktif dan tidak butuh thumbnail terpisah.';
-    if (el.liveThumbWrap) el.liveThumbWrap.style.display = live ? "flex" : "none";
+    if (el.liveThumbWrap) el.liveThumbWrap.style.display = "flex";
     var pill = document.getElementById("imgModePill");
     if (pill) pill.textContent = (userImages.length ? "Mode: gambar upload (" + userImages.length + ")" : "Mode: desain otomatis") + (live ? " (thumbnail)" : " (video)");
     updateUploadBtnState();
@@ -1668,9 +1684,10 @@
     selectedIds = {};
     events.forEach(function(r){ selectedIds[r._id] = !r._invalid; }); // baris invalid tidak ikut terpilih otomatis
 
-    if (el.liveThumbChk && parsed.some(function(r){ return !!r.thumbnail; })){
+    if (el.liveThumbChk && (parsed.some(function(r){ return !!r.thumbnail; }) || userImages.length > 0)){
       el.liveThumbChk.checked = true;
     }
+    preloadRemoteThumbnails(parsed);
     renderWarnings(problems);
     renderPreviewTable();
     renderEventsTable();
@@ -1728,14 +1745,20 @@
 
   // ================= RENDER TABEL EVENT (SECTION 4) =================
   function rowsNeedingThumbFix(){
-    // Baris sukses dibuat sebagai jadwal live, tapi thumbnail-nya gagal ke-set (429/403/kuota/dll) -> masih pakai thumbnail default YouTube.
+    // Baris sukses (live maupun video) yang thumbnail-nya gagal ke-set (429/403/kuota/dll)
     return events.filter(function(r){
-      return r.mode === "live" && r.status === "sukses" && r.videoId && r.message && /thumbnail/i.test(r.message);
+      return r.status === "sukses" && r.videoId && r.message && /thumbnail/i.test(r.message);
+    });
+  }
+  function rowsNeedingChatRetry(){
+    return events.filter(function(r){
+      return r.mode === "live" && r.status === "sukses" && r.videoId && r.chatMessage && !r.chatSent;
     });
   }
   // ================= EKSPOR ID / LINK / CHANNEL =================
   function watchUrl(id){ return "https://www.youtube.com/watch?v=" + encodeURIComponent(id); }
   function studioUrl(id, mode){ return "https://studio.youtube.com/video/" + encodeURIComponent(id) + (mode === "live" ? "/livestreaming" : "/edit"); }
+  function liveChatUrl(id){ return "https://www.youtube.com/live_chat?v=" + encodeURIComponent(id); }
   function playlistUrl(id){ return "https://www.youtube.com/playlist?list=" + encodeURIComponent(id); }
   // Sel CSV: quote kalau perlu, dan netralkan awalan = + - @ supaya tidak dibaca Excel sebagai rumus.
   function csvCell(v){
@@ -1760,16 +1783,144 @@
   }
   function eventExportRow(r){
     var utc = rowUtcIso(r) || "";
+    var chatStatus = r.chatMessage ? (r.chatSent ? "terkirim" : "gagal/belum") : "";
+    var pinStatus = r.chatMessage ? (r.chatSent ? "siap_pin" : "menunggu_chat") : "";
     return [
       r.videoId, r.title,
       (r.date || "") + " " + (r.time || "") + " " + timeLabel(r), utc,
       r.privacy, r.mode === "live" ? "live" : "video",
       watchUrl(r.videoId), studioUrl(r.videoId, r.mode),
+      r.mode === "live" ? liveChatUrl(r.videoId) : "",
       r.channelTitle || r.uploadedVia || "", r.channelId || "",
-      r.playlist || "", r.streamName || "", r.streamKey || "", r.chatMessage || "", r.createdAt || ""
+      r.playlist || "", r.streamName || "", r.streamKey || "",
+      r.liveChatId || "", r.chatMessageId || "", r.chatMessage || "",
+      chatStatus, pinStatus, r.createdAt || ""
     ];
   }
-  var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "channel", "channel_id", "playlist", "nama_stream", "stream_key", "isi_chatt", "dibuat_pada"];
+  var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "link_live_chat", "channel", "channel_id", "playlist", "nama_stream", "stream_key", "live_chat_id", "chat_message_id", "isi_chatt", "chat_status", "pin_status", "dibuat_pada"];
+
+  // Unduh script Python Playwright siap jalan untuk Auto-Pin Live Chat (kondisional: skip jika sudah di-pin, pin jika chat ada, kirim+pin jika kosong)
+  function exportAutoPinScript(){
+    var list = doneRows(true).filter(function(r){ return !!r.chatMessage; });
+    if (!list.length){
+      list = doneRows(true);
+    }
+    if (!list.length){ showToast("Belum ada event live sukses untuk di-pin"); return; }
+    var items = list.map(function(r){
+      return {
+        video_id: r.videoId,
+        title: r.title || "",
+        isi_chatt: r.chatMessage || "",
+        channel_id: r.channelId || "",
+        chat_sent: !!r.chatSent
+      };
+    });
+    var py = [
+      '# Auto Pin Live Chat YouTube (Playwright - Chrome Persistent Profile)',
+      '# Dihasilkan otomatis oleh YouTube Jhony Auto Tools.',
+      '# Alur kondisional per jadwal:',
+      '#   1. Sudah ada pinned chat -> SKIP',
+      '#   2. Chat sudah terkirim via API tapi belum di-pin -> langsung PIN',
+      '#   3. Belum ada chat -> isi Isi_Chatt, kirim, lalu PIN',
+      '# Jalankan: pip install playwright && playwright install chromium',
+      '# Lalu:     python auto_pin_chat.py',
+      'import time',
+      'from playwright.sync_api import sync_playwright',
+      '',
+      '# Ganti ke folder profil Chrome yang sudah login ke Brand Account Anda',
+      'USER_DATA_DIR = r"./chrome_profile_yt"',
+      'HEADLESS = False',
+      '',
+      'EVENTS = ' + JSON.stringify(items, null, 2),
+      '',
+      'def pin_live_chat_for_event(page, item):',
+      '    vid = item["video_id"]',
+      '    msg = (item.get("isi_chatt") or "").strip()',
+      '    url = f"https://www.youtube.com/live_chat?v={vid}"',
+      '    print(f"\\n>>> Membuka Live Chat: {item.get(\'title\')} ({vid})")',
+      '    page.goto(url, wait_until="domcontentloaded", timeout=45000)',
+      '    page.wait_for_timeout(4000)',
+      '',
+      '    # 1. Cek apakah sudah ada pesan yang di-pin',
+      '    pinned = page.locator("yt-live-chat-banner-manager yt-live-chat-banner-renderer")',
+      '    if pinned.count() > 0 and pinned.first.is_visible():',
+      '        print("  [SKIP] Chat sudah ada dan sudah di-pin.")',
+      '        return',
+      '',
+      '    # 2. Cari pesan yang sudah terkirim; jika belum ada & isi_chatt terisi -> kirim dulu',
+      '    msgs = page.locator("yt-live-chat-text-message-renderer")',
+      '    if msgs.count() == 0 and msg:',
+      '        box = page.locator("div#input[contenteditable=\'true\']").first',
+      '        if box.is_visible():',
+      '            box.click()',
+      '            box.fill(msg)',
+      '            page.wait_for_timeout(400)',
+      '            page.locator("yt-button-renderer#send-button button, #send-button button").first.click()',
+      '            print("  [KIRIM] Pesan awal dikirim ke Live Chat.")',
+      '            page.wait_for_timeout(3000)',
+      '        else:',
+      '            print("  [GAGAL] Kolom input chat tidak ditemukan (pastikan sudah login & switch ke Brand Account).")',
+      '            return',
+      '',
+      '    # 3. Pin pesan terakhir / pesan yang cocok dengan isi_chatt',
+      '    target = None',
+      '    count = msgs.count()',
+      '    for i in range(count - 1, -1, -1):',
+      '        m = msgs.nth(i)',
+      '        if not msg or msg[:25].lower() in (m.inner_text() or "").lower():',
+      '            target = m',
+      '            break',
+      '    if target is None and count > 0:',
+      '        target = msgs.last',
+      '    if target is None:',
+      '        print("  [SKIP] Tidak ada pesan chat untuk di-pin.")',
+      '        return',
+      '',
+      '    target.hover()',
+      '    page.wait_for_timeout(400)',
+      '    menu_btn = target.locator("#menu-button button, yt-icon-button#menu-button").first',
+      '    menu_btn.click()',
+      '    page.wait_for_timeout(600)',
+      '    pin_item = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item").filter(has_text="Pin").first',
+      '    if pin_item.count() == 0:',
+      '        pin_item = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item").filter(has_text="Sematkan").first',
+      '    if pin_item.count() > 0:',
+      '        pin_item.click()',
+      '        page.wait_for_timeout(800)',
+      '        confirm = page.locator("yt-confirm-dialog-renderer #confirm-button button, button:has-text(\'Pin\'), button:has-text(\'Sematkan\')").last',
+      '        if confirm.is_visible():',
+      '            confirm.click()',
+      '            page.wait_for_timeout(800)',
+      '        print("  [OK] Pesan berhasil di-PIN!")',
+      '    else:',
+      '        print("  [PERINGATAN] Tombol Pin/Sematkan tidak muncul (pastikan profil Chrome aktif di Brand Account pemilik channel).")',
+      '',
+      'def main():',
+      '    with sync_playwright() as p:',
+      '        ctx = p.chromium.launch_persistent_context(USER_DATA_DIR, headless=HEADLESS)',
+      '        page = ctx.pages[0] if ctx.pages else ctx.new_page()',
+      '        for item in EVENTS:',
+      '            try:',
+      '                pin_live_chat_for_event(page, item)',
+      '            except Exception as e:',
+      '                print(f"  [ERROR] {item[\'video_id\']}: {e}")',
+      '            time.sleep(1.5)',
+      '        print("\\nSelesai memproses semua event.")',
+      '        ctx.close()',
+      '',
+      'if __name__ == "__main__":',
+      '    main()',
+      ''
+    ].join("\n");
+    var blob = new Blob([py], { type: "text/x-python;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "auto_pin_chat-" + todayStamp() + ".py";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
+    log("Diunduh script Auto-Pin Chat (Playwright) untuk " + list.length + " event live.", "success");
+    showToast("Script auto_pin_chat.py diunduh");
+  }
 
   function exportEvents(onlyLive){
     var list = doneRows(onlyLive);
@@ -1954,12 +2105,23 @@
     el.exportIdsBtn.disabled = !live.length;
     el.copyIdsBtn.disabled = !live.length;
     if (el.exportKeysBtn) el.exportKeysBtn.disabled = !live.length;
+    if (el.exportPinScriptBtn) el.exportPinScriptBtn.disabled = !live.length;
   }
 
   function updateFixThumbsBtn(){
     var n = rowsNeedingThumbFix().length;
     el.fixThumbsBtn.style.display = n ? "block" : "none";
     el.fixThumbsBtn.textContent = "Perbaiki Thumbnail Gagal (" + n + ")";
+    var allDone = doneRows(false).length;
+    if (el.updateAllThumbsBtn){
+      el.updateAllThumbsBtn.style.display = allDone ? "block" : "none";
+      el.updateAllThumbsBtn.textContent = "\uD83D\uDDBC Ubah Thumbnail Event Sukses (" + allDone + ")";
+    }
+    var nChat = rowsNeedingChatRetry().length;
+    if (el.retryChatBtn){
+      el.retryChatBtn.style.display = nChat ? "block" : "none";
+      el.retryChatBtn.textContent = "\uD83D\uDCAC Kirim Ulang Chat Gagal (" + nChat + ")";
+    }
   }
 
   function renderEventsTable(){
@@ -1991,13 +2153,24 @@
       if (r.status === "ready") statusHtml = '<span class="status-tag ready">Ready</span>';
       else if (r.status === "loading") statusHtml = '<span class="status-tag loading">Proses</span>';
       else if (r.status === "skip") statusHtml = '<span class="status-tag skip">Skip (lewat)</span>';
-      else if (r.status === "sukses") statusHtml = '<div><span class="status-tag sukses">Sukses</span>' + (r.videoId ? '<div class="mono" style="font-size:10px;color:var(--muted);margin-top:3px;"><a href="' + watchUrl(r.videoId) + '" target="_blank" rel="noopener" style="color:#93c5fd;">' + escapeHtml(r.videoId) + '</a></div>' : '') + (r.mode === "live" ? '<div style="font-size:10px;color:#93c5fd;margin-top:2px;">jadwal live' + (r.message && /tapi:/.test(r.message) ? ' (<span style="color:#fbbf24;">' + escapeHtml(r.message.replace("Jadwal live dibuat, tapi: ", "")) + '</span>)' : '') + '</div>' : '') + (r.uploadedVia ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;">via ' + escapeHtml(r.uploadedVia) + '</div>' : '') + '</div>';
+      else if (r.status === "sukses") statusHtml = '<div><span class="status-tag sukses">Sukses</span>' +
+        (r.videoId ? '<div class="mono" style="font-size:10px;color:var(--muted);margin-top:3px;"><a href="' + watchUrl(r.videoId) + '" target="_blank" rel="noopener" style="color:#93c5fd;">' + escapeHtml(r.videoId) + '</a></div>' : '') +
+        (r.mode === "live" ? '<div style="font-size:10px;color:#93c5fd;margin-top:2px;">jadwal live' + (r.message && /tapi:/.test(r.message) ? ' (<span style="color:#fbbf24;">' + escapeHtml(r.message.replace("Jadwal live dibuat, tapi: ", "")) + '</span>)' : '') + '</div>' : (r.message && /tapi:/.test(r.message) ? '<div style="font-size:10px;color:#fbbf24;margin-top:2px;">' + escapeHtml(r.message) + '</div>' : '')) +
+        (r.chatSent ? '<div style="font-size:10px;color:#86efac;margin-top:2px;">&#10003; Chat terkirim</div>' : '') +
+        (r.mode === "live" && r.videoId && r.chatMessage ? '<a class="pin-btn" href="' + liveChatUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Pin Chat</a> ' : '') +
+        (r.uploadedVia ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;">via ' + escapeHtml(r.uploadedVia) + '</div>' : '') + '</div>';
       else if (r.status === "gagal") statusHtml = '<div><span class="status-tag gagal">Gagal</span><div style="font-size:10px;color:#fca5a5;max-width:180px;margin-top:3px;">' + escapeHtml(r.message || "") + '</div></div>';
+
+      var thumbPreviewSrc = getPreviewThumbSrcForRow(r);
+      var thumbHtml = thumbPreviewSrc
+        ? '<img class="row-thumb" src="' + escapeHtml(thumbPreviewSrc) + '" alt="thumb" title="' + escapeHtml(r.thumbnail || "Thumbnail") + '">'
+        : '';
 
       rowsHtml += '<tr>' +
         '<td>' +
           '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
             '<input type="checkbox" class="row-chk" data-id="' + r._id + '" ' + checked + ' style="margin-top:3px;">' +
+            thumbHtml +
             '<span>' +
               '<div style="font-weight:500;">' + escapeHtml(r.title || "(tanpa judul)") + (r._invalid ? ' <span style="color:#fca5a5;font-size:10px;">(data tidak valid)</span>' : '') + '</div>' +
               '<div class="mono" style="font-size:11px;color:var(--muted);margin-top:2px;">' + escapeHtml(r.date) + ' &bull; ' + escapeHtml(r.time) + ' ' + escapeHtml(timeLabel(r)) + ' &bull; ' + utcLabel + ' UTC &bull; ' + (appMode === "live" ? 'jadwal live' : 'auto-publish') + '</div>' +
@@ -2697,31 +2870,131 @@
     return parseInt(m[3], 10) + " " + bulan[parseInt(m[2], 10) - 1] + " " + m[1];
   }
 
-  // Pilih gambar upload untuk baris tertentu: dibagi bergilir (round-robin) berdasarkan posisi
-  // baris itu di daftar "events" (BUKAN posisi di antrean upload), supaya tiap baris selalu dapat
-  // gambar yang sama walau di-retry di akun lain. Kalau tidak ada gambar upload, return null (desain otomatis).
-  function pickImageForRow(row){
+  // Cache gambar remote dari kolom Thumbnail (URL https://...) agar bisa dipakai langsung di preview, video, & thumbnails.set
+  var _remoteImgCache = {};   // rawUrl -> { img: HTMLImageElement, url: objectURL, failed: bool, loading: bool }
+
+  function normalizeRemoteImageUrl(rawUrl){
+    var u = String(rawUrl || "").trim();
+    if (!u) return "";
+    // Konversi otomatis link share Google Drive -> direct image URL yang mendukung CORS
+    var gd1 = u.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/i);
+    if (gd1) return "https://lh3.googleusercontent.com/d/" + gd1[1] + "=w1280";
+    var gd2 = u.match(/drive\.google\.com\/(?:open|uc)\?[^#]*\bid=([A-Za-z0-9_-]+)/i);
+    if (gd2) return "https://lh3.googleusercontent.com/d/" + gd2[1] + "=w1280";
+    return u;
+  }
+
+  function corsProxyUrlFor(url){
+    return "https://wsrv.nl/?url=" + encodeURIComponent(url) + "&w=1280&h=720&fit=cover&output=jpg&q=88";
+  }
+
+  function fetchBlobToImage(blob){
+    return new Promise(function(resolve, reject){
+      var objUrl = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function(){ resolve({ img: img, url: objUrl }); };
+      img.onerror = function(){ URL.revokeObjectURL(objUrl); reject(new Error("Format gambar tidak valid")); };
+      img.src = objUrl;
+    });
+  }
+
+  function loadRemoteImageForUrl(rawUrl){
+    var key = String(rawUrl || "").trim();
+    if (!key || !/^https?:\/\//i.test(key)) return Promise.resolve(null);
+    var cached = _remoteImgCache[key];
+    if (cached && cached.img) return Promise.resolve(cached);
+    if (cached && cached.promise) return cached.promise;
+
+    var directUrl = normalizeRemoteImageUrl(key);
+    var useProxy = !!(el.corsProxyThumbChk && el.corsProxyThumbChk.checked);
+
+    var tryFetch = function(url){
+      return fetch(url, { mode: "cors" }).then(function(r){
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      }).then(function(b){
+        if (!b || b.size === 0) throw new Error("Blob kosong");
+        return fetchBlobToImage(b);
+      });
+    };
+
+    var p = tryFetch(directUrl).catch(function(){
+      if (!useProxy) throw new Error("CORS/network error");
+      return tryFetch(corsProxyUrlFor(directUrl));
+    }).then(function(loaded){
+      _remoteImgCache[key] = { img: loaded.img, url: loaded.url, failed: false };
+      return _remoteImgCache[key];
+    }).catch(function(err){
+      _remoteImgCache[key] = { img: null, url: null, failed: true, error: err && err.message };
+      return null;
+    });
+
+    _remoteImgCache[key] = { img: null, url: null, failed: false, promise: p };
+    return p;
+  }
+
+  function preloadRemoteThumbnails(rows){
+    var urls = [];
+    (rows || []).forEach(function(r){
+      if (r && r.thumbnail && /^https?:\/\//i.test(r.thumbnail) && urls.indexOf(r.thumbnail) === -1){
+        urls.push(r.thumbnail);
+      }
+    });
+    if (!urls.length) return;
+    var loadedCount = 0;
+    Promise.all(urls.slice(0, 30).map(function(u){
+      return loadRemoteImageForUrl(u).then(function(res){ if (res && res.img) loadedCount++; });
+    })).then(function(){
+      if (loadedCount > 0){
+        log("✓ " + loadedCount + "/" + Math.min(urls.length, 30) + " URL Thumbnail berhasil dimuat untuk preview & upload langsung.", "success");
+        renderAssetPreview();
+        renderEventsTable();
+      }
+    });
+  }
+
+  function findMatchedLocalEntry(row){
     if (!userImages.length) return null;
-    if (!row) return userImages[0].img;
-    // Jika kolom Thumbnail di CSV diisi nama file (mis. thumb1.jpg atau C:\folder\thumb1.jpg), cari yang cocok di galeri gambar
+    if (!row) return userImages[0];
     if (row.thumbnail && !/^https?:\/\//i.test(row.thumbnail)){
       var target = String(row.thumbnail).replace(/^.*[\\\/]/, "").trim().toLowerCase();
       var targetNoExt = target.replace(/\.[^.]+$/, "");
       for (var j = 0; j < userImages.length; j++){
         var nm = String(userImages[j].name || "").trim().toLowerCase();
         var nmNoExt = nm.replace(/\.[^.]+$/, "");
-        if (nm === target || (targetNoExt && nmNoExt === targetNoExt)) return userImages[j].img;
+        if (nm === target || (targetNoExt && nmNoExt === targetNoExt)) return userImages[j];
       }
     }
     var i = events.indexOf(row);
     if (i < 0) i = 0;
-    return userImages[i % userImages.length].img;
+    return userImages[i % userImages.length];
   }
 
-  // Gambar satu frame ke canvas: mode upload (gambar user, bergilir kalau >1) atau desain otomatis dari judul.
-  function drawFrame(ctx, row){
+  function getPreviewThumbSrcForRow(row){
+    if (!row) return "";
+    if (row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
+      var c = _remoteImgCache[row.thumbnail];
+      if (c && c.url) return c.url;
+      return normalizeRemoteImageUrl(row.thumbnail);
+    }
+    var local = findMatchedLocalEntry(row);
+    return local ? local.url : "";
+  }
+
+  // Pilih gambar untuk baris tertentu: prioritas 1) URL remote yang sudah dimuat, 2) nama file cocok di Bagian 3, 3) round-robin Bagian 3, 4) null (desain otomatis).
+  function pickImageForRow(row){
+    if (row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
+      var c = _remoteImgCache[row.thumbnail];
+      if (c && c.img) return c.img;
+    }
+    var local = findMatchedLocalEntry(row);
+    return local ? local.img : null;
+  }
+
+  // Gambar satu frame ke canvas: mode upload/URL atau desain otomatis dari judul.
+  function drawFrame(ctx, row, overrideImg){
     var W = VIDEO_W, H = VIDEO_H;
-    var img = pickImageForRow(row);
+    var img = overrideImg || pickImageForRow(row);
     if (img){
       // cover: isi penuh 16:9 tanpa gepeng
       ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
@@ -2761,29 +3034,27 @@
   }
 
   // Render satu gambar thumbnail 1280x720 (JPEG, dijaga < 2 MB sesuai batas thumbnails.set). cb(err, blob).
+  // Selalu mengonversi gambar URL (termasuk WebP/PNG/Google Drive/besar) via canvas ke JPEG 1280x720 agar PASTI diterima YouTube!
   function renderThumbnailForRow(row, cb){
-    // Jika kolom Thumbnail berisi URL gambar (http/https), coba ambil langsung; jika gagal CORS, lanjut ke canvas lokal
     if (row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
-      fetch(row.thumbnail).then(function(r){
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.blob();
-      }).then(function(b){
-        if (b && b.size > 0 && b.size <= 2 * 1024 * 1024 && /^image\//i.test(b.type || "")){
-          cb(null, b);
+      loadRemoteImageForUrl(row.thumbnail).then(function(loaded){
+        if (loaded && loaded.img){
+          renderThumbnailFromCanvas(row, cb, loaded.img);
         } else {
+          log("⚠ URL Thumbnail gagal diambil (CORS/offline) untuk \"" + row.title + "\" (" + row.thumbnail + "), fallback ke gambar lokal/canvas.", "info");
           renderThumbnailFromCanvas(row, cb);
         }
-      }).catch(function(){ renderThumbnailFromCanvas(row, cb); });
+      });
       return;
     }
     renderThumbnailFromCanvas(row, cb);
   }
-  function renderThumbnailFromCanvas(row, cb){
+  function renderThumbnailFromCanvas(row, cb, overrideImg){
     try {
       var c = document.createElement("canvas");
       c.width = VIDEO_W; c.height = VIDEO_H;
       var ctx = c.getContext("2d");
-      drawFrame(ctx, row);
+      drawFrame(ctx, row, overrideImg);
       var qualities = [0.92, 0.85, 0.75, 0.6, 0.45];
       var attempt = function(i){
         c.toBlob(function(blob){
@@ -2813,11 +3084,12 @@
       renderingVideo = false;
       cb(err, blob);
     }
+    var runRecord = function(overrideImg){
     try {
       var vc = document.createElement("canvas");
       vc.width = VIDEO_W; vc.height = VIDEO_H;
       var ctx = vc.getContext("2d");
-      drawFrame(ctx, row);
+      drawFrame(ctx, row, overrideImg);
 
       var stream = vc.captureStream(10);
       var mimeType = pickMimeType();
@@ -2836,12 +3108,18 @@
       // timeslice 1000ms supaya data terkumpul berkala
       recorder.start(1000);
       // gambar ulang tiap 100ms agar captureStream terus menghasilkan frame
-      var tick = setInterval(function(){ drawFrame(ctx, row); }, 100);
+      var tick = setInterval(function(){ drawFrame(ctx, row, overrideImg); }, 100);
       setTimeout(function(){
         if (recorder.state !== "inactive") recorder.stop();
       }, VIDEO_SECONDS * 1000);
     } catch (e){
       finish("Gagal render video: " + (e.message || e));
+    }
+    };
+    if (row && row.thumbnail && /^https?:\/\//i.test(row.thumbnail)){
+      loadRemoteImageForUrl(row.thumbnail).then(function(loaded){ runRecord(loaded && loaded.img); });
+    } else {
+      runRecord(null);
     }
   }
 
@@ -2925,6 +3203,7 @@
     el.imgModePill.textContent = (userImages.length ? "Mode: gambar upload (" + userImages.length + ")" : "Mode: desain otomatis") + (appMode === "live" ? " (thumbnail)" : " (video)");
     renderImageGallery();
     renderAssetPreview();
+    if (events.length) renderEventsTable();
   }
 
   // Preview: kalau >1 gambar, tampilkan beberapa contoh frame berurutan supaya rotasinya kelihatan.
@@ -3093,27 +3372,52 @@
 
         // ---- tahap 6: kirim pesan awal ke Live Chat jika kolom Isi_Chatt terisi ----
         var stepChat = function(next){
-          var chatId = bc.snippet && bc.snippet.liveChatId;
           if (!row.chatMessage){ next(); return; }
-          if (!chatId){ warnings.push("chat: liveChatId belum tersedia dari YouTube"); next(); return; }
-          fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
-            body: JSON.stringify({
-              snippet: {
-                liveChatId: chatId,
-                type: "textMessageEvent",
-                textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
-              }
-            })
-          }).then(function(r){
-            costUsed += 50;
-            if (r.ok){ next(); return; }
-            return r.text().then(function(t){
-              warnings.push("chat gagal (" + r.status + ")");
-              next();
-            });
-          }).catch(function(e){ warnings.push("chat: " + (e.message || e)); next(); });
+          var sendWithChatId = function(chatId){
+            if (!chatId){ warnings.push("chat: liveChatId belum tersedia dari YouTube"); next(); return; }
+            row.liveChatId = chatId;
+            fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
+              method: "POST",
+              headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+              body: JSON.stringify({
+                snippet: {
+                  liveChatId: chatId,
+                  type: "textMessageEvent",
+                  textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
+                }
+              })
+            }).then(function(r){
+              costUsed += 50;
+              return r.text().then(function(t){
+                if (r.ok){
+                  var mj = {}; try { mj = JSON.parse(t); } catch (e){}
+                  row.chatMessageId = mj.id || "";
+                  row.chatSent = true;
+                  next();
+                  return;
+                }
+                warnings.push("chat gagal (" + r.status + ")");
+                next();
+              });
+            }).catch(function(e){ warnings.push("chat: " + (e.message || e)); next(); });
+          };
+
+          var initialChatId = bc.snippet && bc.snippet.liveChatId;
+          if (initialChatId){
+            sendWithChatId(initialChatId);
+            return;
+          }
+          // Jika liveChatId belum langsung muncul di respons insert, tunggu 1.5 detik lalu ambil ulang dari liveBroadcasts.list
+          setTimeout(function(){
+            fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&id=" + encodeURIComponent(videoId), {
+              headers: { "Authorization": "Bearer " + token }
+            }).then(function(r){ costUsed += 1; return r.ok ? r.json() : {}; })
+              .catch(function(){ return {}; })
+              .then(function(d){
+                var cid = d && d.items && d.items[0] && d.items[0].snippet && d.items[0].snippet.liveChatId;
+                sendWithChatId(cid || null);
+              });
+          }, 1500);
         };
 
         stepThumb(function(){
@@ -3328,6 +3632,134 @@
           log("✗ Thumbnail \"" + row.title + "\" gagal: token akun tidak bisa diperbarui (" + err2.message + ")", "error");
           failed++; i++; setTimeout(next, 500);
         });
+      });
+    }
+    next();
+  }
+
+  // Langsung ubah gambar thumbnail ke YouTube (thumbnails.set) untuk SEMUA event yang sudah sukses (baik live maupun video)
+  function updateAllSuccessThumbnails(){
+    if (running){ showToast("Tunggu proses upload selesai dulu"); return; }
+    var rows = doneRows(false);
+    if (!rows.length){ showToast("Belum ada event sukses yang bisa diubah thumbnailnya"); return; }
+    if (!window.confirm("Ubah/upload ulang gambar thumbnail untuk " + rows.length + " event sukses ke YouTube? (Biaya ~50 unit kuota per event)")) return;
+
+    var fixed = 0, failed = 0, noAcc = 0, i = 0;
+    log("Mulai ubah thumbnail langsung untuk " + rows.length + " event sukses...", "info");
+    if (el.updateAllThumbsBtn) el.updateAllThumbsBtn.disabled = true;
+
+    function next(){
+      if (i >= rows.length){
+        if (el.updateAllThumbsBtn) el.updateAllThumbsBtn.disabled = false;
+        log("Selesai ubah thumbnail: " + fixed + " berhasil, " + failed + " gagal, " + noAcc + " butuh login akun.", fixed ? "success" : "error");
+        showToast(fixed + "/" + rows.length + " thumbnail berhasil diubah");
+        renderEventsTable();
+        renderClientIds();
+        return;
+      }
+      var row = rows[i];
+      var acc = findAccountForRow(row);
+      if (!acc){
+        log("⏭ Lewati \"" + row.title + "\": akun \"" + (row.uploadedVia || "?") + "\" belum login/token habis.", "error");
+        noAcc++; i++; next();
+        return;
+      }
+      renderThumbnailForRow(row, function(err, blob){
+        if (err){ log("✗ Gagal render thumbnail \"" + row.title + "\": " + err, "error"); failed++; i++; setTimeout(next, 500); return; }
+        ensureFreshToken(acc).then(function(freshToken){
+          setThumbnailWithRetry(row.videoId, freshToken, blob, row.title, function(err2, attempts){
+            addClientQuotaUsage(acc.clientId, "live", (attempts || 1) * COST.live.thumb);
+            if (err2){
+              log("✗ Gagal ubah thumbnail \"" + row.title + "\": " + err2, "error");
+              failed++;
+            } else {
+              log("✓ Thumbnail \"" + row.title + "\" (" + row.videoId + ") berhasil diubah di YouTube.", "success");
+              row.message = (row.message || "").replace(/;?\s*thumbnail[^;]*/i, "").replace(/^Jadwal live dibuat, tapi:\s*;?\s*/i, "Jadwal live dibuat").trim() || (row.mode === "live" ? "Jadwal live dibuat" : "Sukses diupload");
+              fixed++;
+            }
+            i++;
+            setTimeout(next, 1500);
+          });
+        }).catch(function(e){
+          log("✗ Token gagal diperbarui untuk \"" + row.title + "\": " + e.message, "error");
+          failed++; i++; setTimeout(next, 500);
+        });
+      });
+    }
+    next();
+  }
+
+  // Kirim ulang Live Chat untuk event live sukses yang kolom Isi_Chatt-nya belum terkirim
+  function retryFailedChats(){
+    if (running){ showToast("Tunggu proses upload selesai dulu"); return; }
+    var rows = rowsNeedingChatRetry();
+    if (!rows.length){ showToast("Tidak ada chat gagal yang perlu dikirim ulang"); return; }
+
+    var ok = 0, fail = 0, noAcc = 0, i = 0;
+    log("Mulai kirim ulang Live Chat untuk " + rows.length + " event...", "info");
+    if (el.retryChatBtn) el.retryChatBtn.disabled = true;
+
+    function next(){
+      if (i >= rows.length){
+        if (el.retryChatBtn) el.retryChatBtn.disabled = false;
+        log("Selesai kirim ulang chat: " + ok + " terkirim, " + fail + " gagal, " + noAcc + " butuh login akun.", ok ? "success" : "error");
+        showToast(ok + " chat terkirim" + (fail || noAcc ? ", " + (fail + noAcc) + " belum" : ""));
+        renderEventsTable();
+        renderClientIds();
+        return;
+      }
+      var row = rows[i];
+      var acc = findAccountForRow(row);
+      if (!acc){
+        log("⏭ Lewati chat \"" + row.title + "\": akun belum login/token habis.", "error");
+        noAcc++; i++; next();
+        return;
+      }
+      ensureFreshToken(acc).then(function(token){
+        var getChatId = row.liveChatId
+          ? Promise.resolve(row.liveChatId)
+          : fetch("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&id=" + encodeURIComponent(row.videoId), {
+              headers: { "Authorization": "Bearer " + token }
+            }).then(function(r){ addClientQuotaUsage(acc.clientId, "live", 1); return r.ok ? r.json() : {}; })
+              .then(function(d){ return d && d.items && d.items[0] && d.items[0].snippet && d.items[0].snippet.liveChatId; });
+
+        getChatId.then(function(chatId){
+          if (!chatId){ log("✗ Chat \"" + row.title + "\": liveChatId belum tersedia.", "error"); fail++; i++; setTimeout(next, 600); return; }
+          row.liveChatId = chatId;
+          return fetch("https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json; charset=UTF-8" },
+            body: JSON.stringify({
+              snippet: {
+                liveChatId: chatId,
+                type: "textMessageEvent",
+                textMessageDetails: { messageText: row.chatMessage.slice(0, 200) }
+              }
+            })
+          }).then(function(r){
+            addClientQuotaUsage(acc.clientId, "live", 50);
+            return r.text().then(function(t){
+              if (r.ok){
+                var mj = {}; try { mj = JSON.parse(t); } catch (e){}
+                row.chatMessageId = mj.id || "";
+                row.chatSent = true;
+                row.message = (row.message || "").replace(/;?\s*chat[^;]*/i, "").replace(/^Jadwal live dibuat, tapi:\s*;?\s*/i, "Jadwal live dibuat").trim() || "Jadwal live dibuat";
+                log("✓ Chat \"" + row.title + "\" berhasil dikirim (ID: " + (row.chatMessageId || "-") + ").", "success");
+                ok++;
+              } else {
+                log("✗ Chat \"" + row.title + "\" gagal (" + r.status + "): " + t.slice(0, 120), "error");
+                fail++;
+              }
+              i++; setTimeout(next, 1200);
+            });
+          });
+        }).catch(function(e){
+          log("✗ Chat \"" + row.title + "\" error: " + (e.message || e), "error");
+          fail++; i++; setTimeout(next, 600);
+        });
+      }).catch(function(e){
+        log("✗ Token error untuk chat \"" + row.title + "\": " + e.message, "error");
+        fail++; i++; setTimeout(next, 600);
       });
     }
     next();
@@ -3857,13 +4289,32 @@
           var videoJson;
           try { videoJson = JSON.parse(xhr.responseText); }
           catch (e){ cb({ ok: false, error: "Response upload tidak valid JSON" }); return; }
-          if (row.playlist){
-            assignVideoToPlaylist(row.playlist, videoJson.id, token, row.privacy, function(errP){
-              cb({ ok: true, videoId: videoJson.id, warnings: errP ? ["playlist: " + errP] : [], error: errP || null });
+          var vidId = videoJson.id;
+          var warnings = [];
+          var wantThumb = !!(el.liveThumbChk && el.liveThumbChk.checked && (row.thumbnail || userImages.length > 0));
+
+          var stepVidThumb = function(next){
+            if (!wantThumb){ next(); return; }
+            renderThumbnailForRow(row, function(errT, thumbBlob){
+              if (errT || !thumbBlob){ warnings.push("thumbnail: " + (errT || "gagal render")); next(); return; }
+              setThumbnailWithRetry(vidId, token, thumbBlob, row.title, function(errSet){
+                if (errSet) warnings.push("thumbnail: " + errSet);
+                next();
+              });
             });
-          } else {
-            cb({ ok: true, videoId: videoJson.id, error: null });
-          }
+          };
+          var stepVidPlaylist = function(next){
+            if (!row.playlist){ next(); return; }
+            assignVideoToPlaylist(row.playlist, vidId, token, row.privacy, function(errP){
+              if (errP) warnings.push("playlist: " + errP);
+              next();
+            });
+          };
+          stepVidThumb(function(){
+            stepVidPlaylist(function(){
+              cb({ ok: true, videoId: vidId, warnings: warnings, error: warnings.length ? warnings.join("; ") : null });
+            });
+          });
         } else {
           var cls2 = classifyApiError(xhr.status, xhr.responseText);
           cb({ ok: false, quotaExceeded: cls2.quota, authExpired: cls2.auth, uploadLimit: cls2.uploadLimit, channelSuspended: cls2.channelSuspended, error: "Upload gagal (" + xhr.status + "): " + String(xhr.responseText).slice(0, 200) });
@@ -4064,7 +4515,9 @@
           } else if (res.ok){
             row.status = "sukses";
             row.videoId = res.videoId;
-            row.message = appMode === "live" ? (res.warnings && res.warnings.length ? "Jadwal live dibuat, tapi: " + res.warnings.join("; ") : "Jadwal live dibuat") : "Sukses diupload";
+            row.message = appMode === "live"
+              ? (res.warnings && res.warnings.length ? "Jadwal live dibuat, tapi: " + res.warnings.join("; ") : "Jadwal live dibuat")
+              : (res.warnings && res.warnings.length ? "Sukses diupload, tapi: " + res.warnings.join("; ") : "Sukses diupload");
             row.uploadedVia = acc.channelTitle || acc.email;
             row.channelTitle = acc.channelTitle || null;
             row.channelId = acc.channelId || null;
@@ -4195,6 +4648,9 @@
   el.exportIdsBtn.addEventListener("click", function(){ exportEvents(true); });
   el.exportAllBtn.addEventListener("click", function(){ exportEvents(false); });
   el.exportKeysBtn.addEventListener("click", exportStreamKeys);
+  if (el.exportPinScriptBtn) el.exportPinScriptBtn.addEventListener("click", exportAutoPinScript);
+  if (el.updateAllThumbsBtn) el.updateAllThumbsBtn.addEventListener("click", updateAllSuccessThumbnails);
+  if (el.retryChatBtn) el.retryChatBtn.addEventListener("click", retryFailedChats);
   el.copyIdsBtn.addEventListener("click", function(){
     var l = doneRows(true); if (!l.length) return;
     copyText(l.map(function(r){ return r.videoId; }).join("\n"), l.length + " ID disalin (tempel di Tool 2)");
