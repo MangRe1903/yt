@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT Brand Auto Event</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); }
+    .container { max-width: 920px; margin: 0 auto; display: grid; gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    h1 { margin: 0 0 6px; font-size: 1.4rem; }
+    h2 { margin: 0 0 14px; font-size: 1.05rem; color: #e2e8f0; }
+    p.sub { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin: 12px 0 6px; }
+    input, textarea, select {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: #0f172a; color: var(--text); font-size: 0.92rem;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button {
+      padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer;
+      font-weight: 600; font-size: 0.9rem; background: var(--primary); color: #fff;
+    }
+    button:hover { background: var(--primary-hover); }
+    button.secondary { background: #334155; }
+    button.secondary:hover { background: #475569; }
+    button.success { background: var(--success); color: #052e16; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .channel-box {
+      display: none; align-items: center; gap: 14px; margin-top: 14px;
+      padding: 12px; border-radius: 10px; background: #0f172a; border: 1px solid var(--success);
+    }
+    .channel-box img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; background: #064e3b; color: #6ee7b7; }
+    .log-box {
+      max-height: 260px; overflow-y: auto; background: #020617; border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px; font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.5;
+    }
+    .log-ok { color: #34d399; }
+    .log-err { color: #f87171; }
+    .log-info { color: #93c5fd; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.85rem; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .check-row { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+    .check-row label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text); cursor: pointer; }
+    .check-row input { width: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>YouTube Brand Account — Auto Event</h1>
+      <p class="sub">Penjadwalan YouTube Live langsung via Data API v3 tanpa membuka YouTube Studio.</p>
+    </div>
+
+    <!-- LANGKAH 1: OAUTH BRAND ACCOUNT -->
+    <div class="card">
+      <h2>1. Koneksi OAuth & Pilih Brand Account</h2>
+      <label for="clientId">Google OAuth Client ID (Web Application)</label>
+      <input id="clientId" type="text" placeholder="1234567890-xxxxxxx.apps.googleusercontent.com" />
+      <div class="actions">
+        <button id="btnSaveClient" class="secondary">Simpan Client ID</button>
+        <button id="btnLogin">Login & Pilih Brand Account</button>
+        <button id="btnLogout" class="secondary" disabled>Putuskan Sesi</button>
+      </div>
+      <div id="channelBox" class="channel-box">
+        <img id="chAvatar" src="" alt="Channel Avatar" />
+        <div>
+          <div style="font-weight:700;" id="chTitle">-</div>
+          <div style="font-size:0.82rem; color:var(--muted);">
+            ID: <span id="chId">-</span> · <span class="badge">Token Terikat ke Channel Ini</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGKAH 2: PENGATURAN AUTO EVENT -->
+    <div class="card">
+      <h2>2. Konfigurasi Auto Event (Single / Massal)</h2>
+      <label for="titles">Daftar Judul Event (1 baris = 1 jadwal live)</label>
+      <textarea id="titles" placeholder="Live Match Day 1 - Tim A vs Tim B&#10;Live Match Day 2 - Tim C vs Tim D"></textarea>
+
+      <label for="description">Deskripsi (berlaku untuk semua event)</label>
+      <textarea id="description" style="min-height:70px;" placeholder="Deskripsi siaran langsung..."></textarea>
+
+      <div class="row">
+        <div>
+          <label for="startTime">Waktu Mulai Event Pertama (Waktu Lokal)</label>
+          <input id="startTime" type="datetime-local" />
+        </div>
+        <div>
+          <label for="intervalMin">Jeda Antar Event (Menit)</label>
+          <input id="intervalMin" type="number" value="15" min="0" />
+        </div>
+        <div>
+          <label for="privacy">Privasi</label>
+          <select id="privacy">
+            <option value="public">Public</option>
+            <option value="unlisted" selected>Unlisted</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+        <div>
+          <label for="latency">Latensi</label>
+          <select id="latency">
+            <option value="normal">Normal</option>
+            <option value="low" selected>Low</option>
+            <option value="ultraLow">Ultra Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="streamSelect">Stream Key (Reusable atau Buat Baru)</label>
+          <select id="streamSelect">
+            <option value="__NEW__">-- Buat Stream Key Baru per Event --</option>
+          </select>
+        </div>
+        <div>
+          <label for="thumbFile">Thumbnail Opsional (JPG/PNG maks 2MB)</label>
+          <input id="thumbFile" type="file" accept="image/jpeg,image/png" />
+        </div>
+      </div>
+
+      <div class="check-row">
+        <label><input id="autoStart" type="checkbox" checked /> Enable Auto-Start</label>
+        <label><input id="autoStop" type="checkbox" checked /> Enable Auto-Stop</label>
+      </div>
+
+      <div class="actions">
+        <button id="btnRefreshStreams" class="secondary" disabled>Muat Ulang Stream Key</button>
+        <button id="btnRun" class="success" disabled>Buat Auto Event Sekarang</button>
+      </div>
+    </div>
+
+    <!-- LANGKAH 3: HASIL & LOG -->
+    <div class="card">
+      <h2>3. Hasil & Log Eksekusi</h2>
+      <div class="actions" style="margin-top:0; margin-bottom:12px;">
+        <button id="btnCopyLinks" class="secondary" disabled>Salin Semua Link</button>
+        <button id="btnExportCsv" class="secondary" disabled>Unduh CSV</button>
+      </div>
+      <div id="logBox" class="log-box">Siap. Masukkan Client ID lalu login ke Brand Account Anda.</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Judul</th>
+              <th>Jadwal (UTC)</th>
+              <th>Link Broadcast</th>
+              <th>Stream Key</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const YT_API = 'https://www.googleapis.com/youtube/v3';
+    const YT_UPLOAD = 'https://www.googleapis.com/upload/youtube/v3';
+    const SCOPES = 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl';
+
+    let accessToken = null;
+    let tokenClient = null;
+    let streamMap = {};
+    let createdEvents = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function log(msg, cls = 'log-info') {
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      $('logBox').appendChild(div);
+      $('logBox').scrollTop = $('logBox').scrollHeight;
+    }
+
+    // Set default waktu mulai +10 menit dari sekarang
+    (function initDefaults() {
+      const savedId = localStorage.getItem('yt_brand_client_id');
+      if (savedId) $('clientId').value = savedId;
+
+      const d = new Date(Date.now() + 10 * 60 * 1000);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      $('startTime').value = d.toISOString().slice(0, 16);
+    })();
+
+    $('btnSaveClient').onclick = () => {
+      const val = $('clientId').value.trim();
+      if (!val) return alert('Masukkan Client ID terlebih dahulu.');
+      localStorage.setItem('yt_brand_client_id', val);
+      log('Client ID disimpan di browser (localStorage).', 'log-ok');
+    };
+
+    $('btnLogin').onclick = () => {
+      const clientId = $('clientId').value.trim();
+      if (!clientId) return alert('Isi Google OAuth Client ID terlebih dahulu.');
+      localStorage.setItem('yt_brand_client_id', clientId);
+
+      if (!window.google || !google.accounts || !google.accounts.oauth2) {
+        return alert('Library Google Identity Services belum termuat. Muat ulang halaman.');
+      }
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: SCOPES,
+        callback: async (resp) => {
+          if (resp.error) {
+            log(`OAuth Error: ${resp.error} (${resp.error_description || ''})`, 'log-err');
+            return;
+          }
+          accessToken = resp.access_token;
+          log('Token OAuth berhasil diperoleh. Memverifikasi channel aktif...', 'log-ok');
+          await verifyChannel();
+          await loadExistingStreams();
+          $('btnLogout').disabled = false;
+          $('btnRun').disabled = false;
+          $('btnRefreshStreams').disabled = false;
+        }
+      });
+
+      // Memaksa layar pemilihan Gmail + Brand Account setiap kali login
+      tokenClient.requestAccessToken({ prompt: 'select_account consent' });
+    };
+
+    $('btnLogout').onclick = () => {
+      if (accessToken && window.google?.accounts?.oauth2) {
+        google.accounts.oauth2.revoke(accessToken, () => {});
+      }
+      accessToken = null;
+      $('channelBox').style.display = 'none';
+      $('btnLogout').disabled = true;
+      $('btnRun').disabled = true;
+      $('btnRefreshStreams').disabled = true;
+      log('Sesi diputuskan. Anda dapat login ulang untuk ganti Brand Account.', 'log-info');
+    };
+
+    async function ytFetch(url, options = {}) {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          ...(options.headers || {})
+        }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errMsg = data?.error?.message || `HTTP ${res.status}`;
+        const reason = data?.error?.errors?.[0]?.reason || '';
+        throw new Error(`${errMsg}${reason ? ` [${reason}]` : ''}`);
+      }
+      return data;
+    }
+
+    async function verifyChannel() {
+      try {
+        const data = await ytFetch(`${YT_API}/channels?part=snippet&mine=true`);
+        const ch = data.items?.[0];
+        if (!ch) {
+          log('Tidak ada channel ditemukan pada akun yang dipilih.', 'log-err');
+          return;
+        }
+        $('chTitle').textContent = ch.snippet.title;
+        $('chId').textContent = ch.id;
+        $('chAvatar').src = ch.snippet.thumbnails?.default?.url || '';
+        $('channelBox').style.display = 'flex';
+        log(`Terhubung ke Channel: "${ch.snippet.title}" (${ch.id})`, 'log-ok');
+      } catch (err) {
+        log(`Gagal verifikasi channel: ${err.message}`, 'log-err');
+      }
+    }
+
+    async function loadExistingStreams() {
+      try {
+        const data = await ytFetch(`${YT_API}/liveStreams?part=snippet,cdn,status&mine=true&maxResults=50`);
+        const select = $('streamSelect');
+        select.innerHTML = '<option value="__NEW__">-- Buat Stream Key Baru per Event --</option>';
+        streamMap = {};
+
+        (data.items || []).forEach((s) => {
+          const key = s.cdn?.ingestionInfo?.streamName || '-';
+          const rtmp = s.cdn?.ingestionInfo?.ingestionAddress || '-';
+          streamMap[s.id] = { key, rtmp, title: s.snippet?.title || s.id };
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = `${s.snippet?.title || 'Stream'} (Key: ${key.slice(0, 8)}...)`;
+          select.appendChild(opt);
+        });
+        log(`Ditemukan ${(data.items || []).length} Reusable Stream Key.`, 'log-info');
+      } catch (err) {
+        log(`Gagal memuat daftar stream: ${err.message}`, 'log-err');
+      }
+    }
+
+    $('btnRefreshStreams').onclick = loadExistingStreams;
+
+    async function uploadThumbnail(videoId, file) {
+      const res = await fetch(`${YT_UPLOAD}/thumbnails/set?videoId=${encodeURIComponent(videoId)}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': file.type
+        },
+        body: file
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d?.error?.message || `Thumbnail HTTP ${res.status}`);
+      }
+    }
+
+    $('btnRun').onclick = async () => {
+      const lines = $('titles').value.split('\n').map((s) => s.trim()).filter(Boolean);
+      if (!lines.length) return alert('Isi minimal 1 judul event.');
+
+      const startVal = $('startTime').value;
+      if (!startVal) return alert('Pilih waktu mulai terlebih dahulu.');
+
+      const baseMs = new Date(startVal).getTime();
+      const intervalMs = (parseInt($('intervalMin').value, 10) || 0) * 60 * 1000;
+      const description = $('description').value;
+      const privacyStatus = $('privacy').value;
+      const latencyPreference = $('latency').value;
+      const enableAutoStart = $('autoStart').checked;
+      const enableAutoStop = $('autoStop').checked;
+      const selectedStreamId = $('streamSelect').value;
+      const thumbFile = $('thumbFile').files?.[0] || null;
+
+      $('btnRun').disabled = true;
+      log(`Memulai pembuatan ${lines.length} event...`, 'log-info');
+
+      for (let i = 0; i < lines.length; i++) {
+        const title = lines[i];
+        const scheduledIso = new Date(baseMs + i * intervalMs).toISOString();
+
+        try {
+          // 1. Insert Live Broadcast
+          const broadcast = await ytFetch(`${YT_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              snippet: { title, description, scheduledStartTime: scheduledIso },
+              status: { privacyStatus, selfDeclaredMadeForKids: false },
+              contentDetails: { enableAutoStart, enableAutoStop, latencyPreference }
+            })
+          });
+
+          // 2. Tentukan Stream ID (Reusable atau Buat Baru)
+          let streamId = selectedStreamId;
+          let streamKey = '';
+          let rtmpUrl = '';
+
+          if (selectedStreamId === '__NEW__') {
+            const stream = await ytFetch(`${YT_API}/liveStreams?part=snippet,cdn`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                snippet: { title: `Stream - ${title}`.slice(0, 100) },
+                cdn: { frameRate: 'variable', ingestionType: 'rtmp', resolution: 'variable' }
+              })
+            });
+            streamId = stream.id;
+            streamKey = stream.cdn?.ingestionInfo?.streamName || '-';
+            rtmpUrl = stream.cdn?.ingestionInfo?.ingestionAddress || '-';
+          } else {
+            streamKey = streamMap[streamId]?.key || '-';
+            rtmpUrl = streamMap[streamId]?.rtmp || '-';
+          }
+
+          // 3. Bind Broadcast ke Stream
+          await ytFetch(
+            `${YT_API}/liveBroadcasts/bind?id=${encodeURIComponent(broadcast.id)}&part=id,contentDetails&streamId=${encodeURIComponent(streamId)}`,
+            { method: 'POST' }
+          );
+
+          // 4. Upload Thumbnail (Opsional)
+          if (thumbFile) {
+            try {
+              await uploadThumbnail(broadcast.id, thumbFile);
+            } catch (thumbErr) {
+              log(`  ↳ Peringatan thumbnail (${title}): ${thumbErr.message}`, 'log-err');
+            }
+          }
+
+          const url = `https://youtu.be/${broadcast.id}`;
+          createdEvents.push({ title, scheduledIso, url, streamKey, rtmpUrl });
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${createdEvents.length}</td>
+            <td>${title}</td>
+            <td>${scheduledIso}</td>
+            <td><a href="${url}" target="_blank" rel="noopener">${url}</a></td>
+            <td><code>${streamKey}</code></td>
+          `;
+          $('resultBody').appendChild(tr);
+          $('btnCopyLinks').disabled = false;
+          $('btnExportCsv').disabled = false;
+          log(`✔ [${i + 1}/${lines.length}] Berhasil: ${title} → ${url}`, 'log-ok');
+        } catch (err) {
+          log(`✘ [${i + 1}/${lines.length}] Gagal (${title}): ${err.message}`, 'log-err');
+        }
+      }
+
+      $('btnRun').disabled = false;
+      log('Proses batch selesai.', 'log-info');
+    };
+
+    $('btnCopyLinks').onclick = async () => {
+      const text = createdEvents.map((e) => `${e.title} | ${e.url} | ${e.streamKey}`).join('\n');
+      await navigator.clipboard.writeText(text);
+      log('Semua link dan stream key disalin ke clipboard.', 'log-ok');
+    };
+
+    $('btnExportCsv').onclick = () => {
+      const header = 'Title,ScheduledUTC,URL,RTMP_URL,StreamKey\n';
+      const rows = createdEvents.map((e) =>
+        [e.title, e.scheduledIso, e.url, e.rtmpUrl, e.streamKey]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+      const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `yt-events-${Date.now()}.csv`;
+      a.click();
+    };
+  </script>
+</body>
+</html>
