@@ -494,7 +494,7 @@
             <button class="btn-ghost" id="exportPinScriptBtn" style="flex:1;min-width:200px;color:#fcd34d;">&#128204; Unduh Script Kirim 3x &amp; Pin Chat (.py)</button>
           </div>
           <div class="small" style="color:var(--muted);margin-top:6px;">
-            <b>Info Pin Chat:</b> YouTube Data API v3 resmi mendukung kirim chat (<code class="inline">liveChat/messages</code>), tetapi <b>belum menyediakan endpoint publik untuk Pin Chat</b>. Gunakan tombol <b>&#128204; Pin Chat</b> di tiap baris tabel atau unduh <b>Script Auto-Pin Chat (.py Playwright)</b> untuk pin otomatis lewat profil Chrome lokal (otomatis skip jika sudah di-pin, pin jika chat sudah ada, atau kirim+pin jika masih kosong).
+            <b>Info Pin Chat:</b> YouTube Data API v3 resmi mendukung kirim chat (<code class="inline">liveChat/messages</code>), tetapi <b>belum menyediakan endpoint publik untuk Pin Chat</b>. Gunakan tombol <b>&#128204; Pin Chat (Studio)</b> di tiap baris tabel (<code class="inline">studio.youtube.com/video/{id}/livestreaming</code>) atau unduh <b>Script Auto-Pin Chat (.py Playwright)</b> yang langsung mengakses panel chat YouTube Studio Livestreaming lewat profil Chrome lokal (otomatis skip jika sudah di-pin / ada menu <i>Unpin message</i>, pin jika chat sudah ada, atau kirim 3x + pin jika masih kosong).
           </div>
         </div>
 
@@ -655,9 +655,9 @@
     </div>
     <div class="sec-body">
       <div class="note-box" style="margin-bottom:14px;">
-        <b>Alur Khusus Kirim 3x + Pin Chat (Brand Account tanpa buka YouTube Studio):</b><br>
+        <b>Alur Khusus Kirim 3x + Pin Chat via YouTube Studio Livestreaming:</b><br>
         &bull; <b>Kirim 3x via API (di sini):</b> langsung menembak <code class="inline">liveChat/messages</code> sebanyak <b>3 kali</b> per jadwal (jeda otomatis &amp; retry 404/429) lewat token OAuth Brand Account.<br>
-        &bull; <b>Pin Chat Otomatis:</b> karena YouTube Data API v3 belum menyediakan endpoint Pin publik, klik tombol <b>&#128204; Unduh Script Auto-Pin 3x (.py)</b> untuk menjalankan Playwright langsung di halaman popout <code class="inline">youtube.com/live_chat?v=...&amp;is_popout=1</code> (sudah di-pin &rarr; skip; chat sudah ada &rarr; langsung pin; belum ada chat &rarr; kirim 3x lalu pin; otomatis retry sampai ter-pin).
+        &bull; <b>Pin Chat via Studio (<code class="inline">studio.youtube.com/video/{id}/livestreaming</code>):</b> klik <b>&#128204; Buka Studio &amp; Pin</b> di tiap baris atau klik <b>&#128204; Unduh Script Auto-Pin 3x (.py)</b>. Script Playwright otomatis membuka halaman Live Control Room YouTube Studio, mendeteksi iframe Live Chat di kanan, <b>SKIP</b> jika sudah di-pin (atau terdeteksi <i>Unpin message</i>), langsung <b>Pin</b> jika chat sudah ada, atau kirim 3x lalu <b>Pin</b> jika masih kosong.
       </div>
 
       <div class="field">
@@ -680,7 +680,7 @@
 
       <div class="field" style="margin-top:14px;">
         <label>Atau Tempel Link / Video ID Manual (1 per baris &mdash; opsional tambah <code class="inline">| pesan khusus</code>)</label>
-        <textarea id="pcVideoListInput" rows="5" style="width:100%;padding:10px;font-family:monospace;font-size:12px;" placeholder="https://www.youtube.com/watch?v=cxB34a68Wdo&#10;ljqmtLsv9Kw | Selamat datang di live match!&#10;https://www.youtube.com/live/Upuidu7CK9g"></textarea>
+        <textarea id="pcVideoListInput" rows="5" style="width:100%;padding:10px;font-family:monospace;font-size:12px;" placeholder="https://studio.youtube.com/video/TKSPrfRNCFk/livestreaming&#10;ljqmtLsv9Kw | Selamat datang di live match!&#10;https://www.youtube.com/watch?v=cxB34a68Wdo"></textarea>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
           <span class="small" style="color:var(--muted);" id="pcManualCountLabel">0 link/ID manual</span>
           <button class="btn-ghost" id="pcAddManualBtn" style="padding:7px 12px;font-size:11.5px;">+ Masukkan ke Daftar Target</button>
@@ -693,6 +693,13 @@
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div>
+          <label for="pcAccessModeSelect">Halaman Akses Pin Chat</label>
+          <select id="pcAccessModeSelect">
+            <option value="studio" selected>Studio Livestreaming (studio.youtube.com/video/{id}/livestreaming)</option>
+            <option value="popout">Popout Live Chat (youtube.com/live_chat?v={id}&amp;is_popout=1)</option>
+          </select>
+        </div>
         <div>
           <label for="pcRepeatInput">Jumlah Kirim per Event</label>
           <input type="text" id="pcRepeatInput" value="3">
@@ -712,6 +719,7 @@
         <button class="btn-primary" id="pcSendApiBtn" style="flex:1;min-width:210px;">&#128172; KIRIM CHAT 3X VIA API</button>
         <button class="btn-ghost" id="pcStopBtn" style="display:none;color:#ff6b6b;">&#9632; Stop</button>
         <button class="btn-white" id="pcExportScriptBtn" style="flex:1;min-width:210px;">&#128204; UNDUH SCRIPT AUTO-PIN 3X (.PY)</button>
+        <button class="btn-ghost" id="pcCopyStudioLinksBtn" style="min-width:160px;">&#128279; Salin Link Studio</button>
       </div>
 
       <div style="margin-top:14px;display:none;" id="pcProgressWrap">
@@ -1183,7 +1191,9 @@
     pcDefaultMsgInput: document.getElementById("pcDefaultMsgInput"),
     pcRepeatInput: document.getElementById("pcRepeatInput"),
     pcDelayInput: document.getElementById("pcDelayInput"),
+    pcAccessModeSelect: document.getElementById("pcAccessModeSelect"),
     pcSkipPinnedChk: document.getElementById("pcSkipPinnedChk"),
+    pcCopyStudioLinksBtn: document.getElementById("pcCopyStudioLinksBtn"),
     pcSendApiBtn: document.getElementById("pcSendApiBtn"),
     pcStopBtn: document.getElementById("pcStopBtn"),
     pcExportScriptBtn: document.getElementById("pcExportScriptBtn"),
@@ -1375,7 +1385,7 @@
     }
     if (pinchat){
       renderPinChatAccountSelect();
-      el.modeNote.innerHTML = '<b>Mode Khusus Pin Chat (3x).</b> Mengirim pesan <b>3 kali berturut-turut</b> ke Live Chat setiap event via API Brand Account, plus tombol <b>Pin Chat</b> 1-klik &amp; generator <b>Script Auto-Pin 3x (.py Playwright)</b> tanpa membuka YouTube Studio.';
+      el.modeNote.innerHTML = '<b>Mode Khusus Pin Chat (3x).</b> Mengirim pesan <b>3 kali berturut-turut</b> ke Live Chat via API Brand Account, plus akses Pin Chat langsung di <code class="inline">studio.youtube.com/video/{id}/livestreaming</code> (tombol 1-klik &amp; <b>Script Auto-Pin 3x Playwright</b> yang otomatis mendeteksi iframe chat YouTube Studio).';
       return;
     }
     if (delmode){
@@ -2287,7 +2297,12 @@
   // ================= EKSPOR ID / LINK / CHANNEL =================
   function watchUrl(id){ return "https://www.youtube.com/watch?v=" + encodeURIComponent(id); }
   function studioUrl(id, mode){ return "https://studio.youtube.com/video/" + encodeURIComponent(id) + (mode === "live" ? "/livestreaming" : "/edit"); }
+  function studioLiveUrl(id){ return "https://studio.youtube.com/video/" + encodeURIComponent(id) + "/livestreaming"; }
   function liveChatUrl(id){ return "https://www.youtube.com/live_chat?v=" + encodeURIComponent(id) + "&is_popout=1"; }
+  function pinChatTargetUrl(id){
+    var m = (el.pcAccessModeSelect && el.pcAccessModeSelect.value) || "studio";
+    return m === "popout" ? liveChatUrl(id) : studioLiveUrl(id);
+  }
   function playlistUrl(id){ return "https://www.youtube.com/playlist?list=" + encodeURIComponent(id); }
   // Sel CSV: quote kalau perlu, dan netralkan awalan = + - @ supaya tidak dibaca Excel sebagai rumus.
   function csvCell(v){
@@ -2328,17 +2343,19 @@
   }
   var EXPORT_HEADER = ["videoId", "title", "jadwal_lokal", "jadwal_utc", "privacy", "jenis", "link_watch", "link_studio", "link_live_chat", "channel", "channel_id", "playlist", "nama_stream", "stream_key", "live_chat_id", "chat_message_id", "isi_chatt", "chat_status", "pin_status", "dibuat_pada"];
 
-  // Generator script Python Playwright Kirim 3x + Pin Chat (dipakai bersama oleh Mode Jadwal Live & Mode Khusus Pin Chat 3x)
-  function buildAutoPin3xPython(items, repeatCount, delaySec, skipIfPinned, defaultMsg){
+  // Generator script Python Playwright Kirim 3x + Pin Chat (mendukung YouTube Studio Livestreaming /video/{id}/livestreaming & Popout)
+  function buildAutoPin3xPython(items, repeatCount, delaySec, skipIfPinned, defaultMsg, accessMode){
     var nKirim = Math.max(1, parseInt(repeatCount, 10) || 3);
     var jedaKirim = Math.max(0.5, parseFloat(delaySec) || 2.5);
     var skipFlag = skipIfPinned === false ? "False" : "True";
     var defMsgJson = JSON.stringify(String(defaultMsg || ""));
+    var modeVal = accessMode === "popout" ? "popout" : "studio";
     return [
-      '# Auto Kirim Chat 3x & Pin Chat YouTube (Playwright - Chrome Persistent Profile)',
-      '# Dihasilkan otomatis oleh YouTube Jhony Auto Tools.',
+      '# Auto Kirim Chat 3x & Pin Chat YouTube Studio Livestreaming (Playwright - Chrome Persistent Profile)',
+      '# Dihasilkan otomatis oleh YouTube MangRe Auto Tools.',
+      '# Default akses: https://studio.youtube.com/video/{video_id}/livestreaming (bisa diganti ke "popout").',
       '# Alur kondisional per jadwal:',
-      '#   1. Sudah ada pesan ter-pin -> SKIP (tidak mengklik titik tiga lagi)',
+      '#   1. Sudah ada pesan ter-pin (atau menu menampilkan "Unpin message") -> SKIP (TIDAK unpin)',
       '#   2. Pesan sudah terkirim -> langsung PIN (retry sampai berhasil pin)',
       '#   3. Belum ada / kurang dari ' + nKirim + ' pesan -> kirim kekurangannya hingga ' + nKirim + 'x lalu PIN',
       '#',
@@ -2351,44 +2368,113 @@
       'import time',
       'from playwright.sync_api import sync_playwright',
       '',
-      '# Folder profil Chrome yang sudah login ke Brand Account / Gmail Manager',
+      '# Folder profil Chrome yang sudah login ke Brand Account / YouTube Studio',
       'USER_DATA_DIR = r"./chrome_profile_yt"',
       '# Opsional: isi path chrome.exe (mis. Chrome Portable) atau biarkan None untuk Chromium bawaan Playwright',
       'CHROME_EXECUTABLE = None',
       'HEADLESS = False',
-      '# True = buka youtube.com/channel_switcher dulu agar bisa pastikan Brand Account aktif',
+      '# "studio" = https://studio.youtube.com/video/{id}/livestreaming (panel chat kanan, seperti di YouTube Studio)',
+      '# "popout" = https://www.youtube.com/live_chat?v={id}&is_popout=1',
+      'AKSES_VIA = "' + modeVal + '"',
+      '# True = buka Studio / Channel Switcher dulu di awal agar kamu bisa pastikan akun & Brand Channel sudah aktif',
       'KONFIRMASI_BRAND_AWAL = True',
       '',
       'JUMLAH_KIRIM = ' + nKirim,
       'JEDA_ANTAR_KIRIM = ' + jedaKirim,
-      'JEDA_ANTAR_EVENT = 2.0',
+      'JEDA_ANTAR_EVENT = 2.5',
+      'TIMEOUT_CHAT_FRAME_DETIK = 30',
       'SKIP_JIKA_SUDAH_PIN = ' + skipFlag,
       'MAX_RETRY_PIN = 3',
       'DEFAULT_PESAN = ' + defMsgJson,
       '',
       'EVENTS = ' + JSON.stringify(items, null, 2),
       '',
-      'def is_already_pinned(page):',
-      '    pinned = page.locator("yt-live-chat-banner-manager yt-live-chat-banner-renderer")',
-      '    return pinned.count() > 0 and pinned.first.is_visible()',
-      '',
-      'def find_pin_menu_item(page):',
-      '    for kw in ("Pin message", "Sematkan pesan", "Pin", "Sematkan"):',
-      '        loc = page.locator("ytd-menu-service-item-renderer, tp-yt-paper-item, yt-list-item-view-model").filter(has_text=kw)',
-      '        if loc.count() > 0 and loc.first.is_visible():',
-      '            return loc.first',
+      'def wait_for_chat_scope(page, timeout_sec=TIMEOUT_CHAT_FRAME_DETIK):',
+      '    """',
+      '    Di halaman studio.youtube.com/video/{id}/livestreaming, panel Live Chat berada di dalam iframe',
+      '    (url mengandung "live_chat"). page.frames otomatis menembus Shadow DOM YouTube Studio.',
+      '    """',
+      '    if AKSES_VIA == "popout":',
+      '        return page',
+      '    deadline = time.time() + timeout_sec',
+      '    while time.time() < deadline:',
+      '        for fr in page.frames:',
+      '            f_url = (fr.url or "").lower()',
+      '            if "live_chat" in f_url:',
+      '                try:',
+      '                    ready = fr.locator("yt-live-chat-renderer, yt-live-chat-text-message-renderer, #input[contenteditable=\'true\']")',
+      '                    if ready.count() > 0:',
+      '                        return fr',
+      '                except Exception:',
+      '                    pass',
+      '        page.wait_for_timeout(700)',
       '    return None',
       '',
-      'def kirim_pesan_satu_kali(page, msg):',
+      'def is_already_pinned(scope):',
+      '    selectors = (',
+      '        "yt-live-chat-banner-manager yt-live-chat-banner-renderer",',
+      '        "yt-live-chat-banner-renderer",',
+      '        "yt-live-chat-pinned-message-renderer",',
+      '        "#pinned-message",',
+      '    )',
+      '    for sel in selectors:',
+      '        try:',
+      '            loc = scope.locator(sel)',
+      '            if loc.count() > 0 and loc.first.is_visible():',
+      '                txt = (loc.first.inner_text() or "").strip()',
+      '                if txt:',
+      '                    return True',
+      '        except Exception:',
+      '            pass',
+      '    return False',
+      '',
+      'def inspect_chat_menu(scope, page):',
+      '    """',
+      '    Cek menu titik tiga yang sedang terbuka:',
+      '      - Jika muncul "Unpin message" / "Lepas sematan" -> kembalikan ("ALREADY_PINNED", None)',
+      '      - Jika muncul "Pin message" / "Sematkan pesan"  -> kembalikan ("PIN", locator)',
+      '    """',
+      '    item_sel = "ytd-menu-service-item-renderer, tp-yt-paper-item, yt-list-item-view-model"',
+      '    for root in (scope, page):',
+      '        try:',
+      '            items = root.locator(item_sel)',
+      '            cnt = items.count()',
+      '        except Exception:',
+      '            continue',
+      '        pin_candidate = None',
+      '        for i in range(cnt):',
+      '            it = items.nth(i)',
+      '            try:',
+      '                if not it.is_visible():',
+      '                    continue',
+      '                txt = re.sub(r"\\s+", " ", (it.inner_text() or "")).strip().lower()',
+      '            except Exception:',
+      '                continue',
+      '            if not txt:',
+      '                continue',
+      '            if "unpin" in txt or "lepas sematan" in txt or "batal semat" in txt:',
+      '                return ("ALREADY_PINNED", None)',
+      '            if ("pin message" in txt or "sematkan pesan" in txt or txt == "pin" or txt == "sematkan"):',
+      '                pin_candidate = it',
+      '        if pin_candidate is not None:',
+      '            return ("PIN", pin_candidate)',
+      '    return ("NONE", None)',
+      '',
+      'def kirim_pesan_satu_kali(page, scope, msg):',
       '    clean_msg = re.sub(r"\\s+", " ", msg).strip()[:200]',
-      '    box = page.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
+      '    box = scope.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
       '    if box.count() == 0 or not box.is_visible():',
       '        return False',
       '    box.click()',
-      '    box.fill("")',
+      '    page.wait_for_timeout(150)',
+      '    try:',
+      '        box.fill("")',
+      '    except Exception:',
+      '        page.keyboard.press("Control+A")',
+      '        page.keyboard.press("Backspace")',
       '    page.keyboard.insert_text(clean_msg)',
-      '    page.wait_for_timeout(400)',
-      '    send_btn = page.locator("yt-button-renderer#send-button button, #send-button button").first',
+      '    page.wait_for_timeout(450)',
+      '    send_btn = scope.locator("yt-button-renderer#send-button button, #send-button button").first',
       '    if send_btn.count() > 0 and send_btn.is_visible():',
       '        try:',
       '            send_btn.click(timeout=4000)',
@@ -2401,18 +2487,26 @@
       'def proses_event(page, item, idx, total):',
       '    vid = item["video_id"]',
       '    msg = (item.get("isi_chatt") or DEFAULT_PESAN).strip()',
-      '    url = f"https://www.youtube.com/live_chat?v={vid}&is_popout=1"',
-      '    print(f"\\n[{idx}/{total}] >>> [{vid}] {item.get(\'title\')}")',
-      '    page.goto(url, wait_until="domcontentloaded", timeout=45000)',
-      '    page.wait_for_timeout(4500)',
+      '    if AKSES_VIA == "popout":',
+      '        url = f"https://www.youtube.com/live_chat?v={vid}&is_popout=1"',
+      '    else:',
+      '        url = f"https://studio.youtube.com/video/{vid}/livestreaming"',
+      '    print(f"\\n[{idx}/{total}] >>> [{vid}] {item.get(\'title\')} ({url})")',
+      '    page.goto(url, wait_until="domcontentloaded", timeout=60000)',
+      '',
+      '    scope = wait_for_chat_scope(page)',
+      '    if scope is None:',
+      '        print("  [GAGAL] Panel Live Chat di YouTube Studio tidak muncul (pastikan sudah login & live chat aktif).")',
+      '        return "fail"',
+      '    page.wait_for_timeout(3000)',
       '',
       '    # 1. Cek apakah sudah ada pesan yang di-pin -> langsung SKIP',
-      '    if SKIP_JIKA_SUDAH_PIN and is_already_pinned(page):',
+      '    if SKIP_JIKA_SUDAH_PIN and is_already_pinned(scope):',
       '        print("  [SKIP] Chat sudah ada dan sudah di-PIN.")',
       '        return "skip"',
       '',
       '    # 2. Hitung pesan yang cocok; kirim kekurangannya hingga JUMLAH_KIRIM (3x)',
-      '    msgs = page.locator("yt-live-chat-text-message-renderer")',
+      '    msgs = scope.locator("yt-live-chat-text-message-renderer")',
       '    kunci = re.sub(r"\\s+", " ", msg).strip()[:25].lower()',
       '    sudah_ada = 0',
       '    for i in range(msgs.count()):',
@@ -2422,12 +2516,12 @@
       '',
       '    sisa_kirim = max(0, JUMLAH_KIRIM - sudah_ada) if msg else 0',
       '    if sisa_kirim > 0:',
-      '        box = page.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
+      '        box = scope.locator("yt-live-chat-text-input-field-renderer #input[contenteditable=\'true\'], div#input[contenteditable=\'true\']").first',
       '        if box.count() == 0 or not box.is_visible():',
-      '            print("  [GAGAL] Kolom chat tidak muncul (pastikan sudah login & pilih Brand Account pemilik channel).")',
+      '            print("  [GAGAL] Kolom chat tidak muncul (pastikan sudah login ke Brand Account pemilik channel di Studio).")',
       '            return "fail"',
       '        for ke in range(1, sisa_kirim + 1):',
-      '            if not kirim_pesan_satu_kali(page, msg):',
+      '            if not kirim_pesan_satu_kali(page, scope, msg):',
       '                print(f"  [GAGAL] Tidak bisa mengisi pesan ke-{sudah_ada + ke}.")',
       '                break',
       '            print(f"  [KIRIM {sudah_ada + ke}/{JUMLAH_KIRIM}] {msg[:65]}")',
@@ -2438,7 +2532,7 @@
       '',
       '    # 3. Pin pesan terakhir dengan retry otomatis sampai banner pinned muncul',
       '    for attempt in range(1, MAX_RETRY_PIN + 1):',
-      '        if is_already_pinned(page):',
+      '        if is_already_pinned(scope):',
       '            print("  [OK] Pesan sudah ter-PIN!")',
       '            return "pinned"',
       '',
@@ -2465,24 +2559,31 @@
       '            menu_btn.evaluate("el => el.click()")',
       '        page.wait_for_timeout(700)',
       '',
-      '        pin_item = find_pin_menu_item(page)',
-      '        if pin_item is not None:',
+      '        status_menu, pin_item = inspect_chat_menu(scope, page)',
+      '        if status_menu == "ALREADY_PINNED":',
+      '            page.keyboard.press("Escape")',
+      '            print("  [SKIP] Menu menampilkan Unpin message -> pesan sudah ter-PIN.")',
+      '            return "skip"',
+      '        if status_menu == "PIN" and pin_item is not None:',
       '            pin_item.click()',
       '            page.wait_for_timeout(900)',
-      '            for ckw in ("Pin", "Sematkan"):',
-      '                confirm = page.locator(f"yt-confirm-dialog-renderer #confirm-button button, tp-yt-paper-dialog button:has-text(\'{ckw}\')")',
-      '                if confirm.count() > 0 and confirm.last.is_visible():',
-      '                    confirm.last.click()',
-      '                    page.wait_for_timeout(900)',
-      '                    break',
-      '            page.wait_for_timeout(1200)',
-      '            if is_already_pinned(page):',
+      '            for root in (scope, page):',
+      '                for ckw in ("Pin", "Sematkan"):',
+      '                    confirm = root.locator(f"yt-confirm-dialog-renderer #confirm-button button, tp-yt-paper-dialog button:has-text(\'{ckw}\')")',
+      '                    if confirm.count() > 0 and confirm.last.is_visible():',
+      '                        confirm.last.click()',
+      '                        page.wait_for_timeout(900)',
+      '                        break',
+      '            page.wait_for_timeout(1400)',
+      '            if is_already_pinned(scope):',
       '                print(f"  [OK] Pesan BERHASIL di-PIN (percobaan {attempt})!")',
       '                return "pinned"',
+      '        else:',
+      '            page.keyboard.press("Escape")',
       '        print(f"  [RETRY PIN {attempt}/{MAX_RETRY_PIN}] Belum terdeteksi ter-pin, mencoba lagi...")',
       '        page.wait_for_timeout(1800)',
       '',
-      '    print("  [GAGAL] Gagal pin setelah beberapa percobaan (pastikan Brand Account aktif adalah pemilik channel).")',
+      '    print("  [GAGAL] Gagal pin setelah beberapa percobaan (pastikan Brand Account aktif di YouTube Studio).")',
       '    return "fail"',
       '',
       'def main():',
@@ -2494,8 +2595,9 @@
       '        ctx = p.chromium.launch_persistent_context(**launch_opts)',
       '        page = ctx.pages[0] if ctx.pages else ctx.new_page()',
       '        if KONFIRMASI_BRAND_AWAL:',
-      '            page.goto("https://www.youtube.com/channel_switcher", wait_until="domcontentloaded")',
-      '            input("\\nPastikan sudah login & klik Brand Account pemilik event, lalu tekan ENTER untuk mulai Kirim 3x + Pin... ")',
+      '            start_url = "https://studio.youtube.com/" if AKSES_VIA == "studio" else "https://www.youtube.com/channel_switcher"',
+      '            page.goto(start_url, wait_until="domcontentloaded")',
+      '            input("\\nPastikan sudah login & aktif di Brand Account pemilik event, lalu tekan ENTER untuk mulai Kirim 3x + Pin... ")',
       '        total = len(EVENTS)',
       '        for idx, item in enumerate(EVENTS, 1):',
       '            try:',
@@ -2532,7 +2634,8 @@
     });
     var repeatCnt = (el.liveChatRepeatSelect && parseInt(el.liveChatRepeatSelect.value, 10)) || 3;
     if (repeatCnt < 1) repeatCnt = 3;
-    var py = buildAutoPin3xPython(items, repeatCnt, 2.5, true, "");
+    var accessMode = (el.pcAccessModeSelect && el.pcAccessModeSelect.value) || "studio";
+    var py = buildAutoPin3xPython(items, repeatCnt, 2.5, true, "", accessMode);
     var blob = new Blob([py], { type: "text/x-python;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -2782,7 +2885,7 @@
         (r.videoId ? '<div class="mono" style="font-size:10px;color:var(--muted);margin-top:3px;"><a href="' + watchUrl(r.videoId) + '" target="_blank" rel="noopener" style="color:#93c5fd;">' + escapeHtml(r.videoId) + '</a></div>' : '') +
         (r.mode === "live" ? '<div style="font-size:10px;color:#93c5fd;margin-top:2px;">jadwal live' + (r.message && /tapi:/.test(r.message) ? ' (<span style="color:#fbbf24;">' + escapeHtml(r.message.replace("Jadwal live dibuat, tapi: ", "")) + '</span>)' : '') + '</div>' : (r.message && /tapi:/.test(r.message) ? '<div style="font-size:10px;color:#fbbf24;margin-top:2px;">' + escapeHtml(r.message) + '</div>' : '')) +
         (r.chatSent ? '<div style="font-size:10px;color:#86efac;margin-top:2px;">&#10003; Chat terkirim' + (r.chatSentCount > 1 ? ' (' + r.chatSentCount + 'x)' : '') + '</div>' : '') +
-        (r.mode === "live" && r.videoId && r.chatMessage ? '<a class="pin-btn" href="' + liveChatUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Pin Chat</a> ' : '') +
+        (r.mode === "live" && r.videoId ? '<a class="pin-btn" href="' + pinChatTargetUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Pin Chat (Studio)</a> ' : '') +
         (r.uploadedVia ? '<div style="font-size:10px;color:var(--muted);margin-top:2px;">via ' + escapeHtml(r.uploadedVia) + '</div>' : '') + '</div>';
       else if (r.status === "gagal") statusHtml = '<div><span class="status-tag gagal">Gagal</span><div style="font-size:10px;color:#fca5a5;max-width:180px;margin-top:3px;">' + escapeHtml(r.message || "") + '</div></div>';
 
@@ -5257,13 +5360,13 @@
     }).join("");
   }
 
-  // Terima link youtube.com/watch?v=, youtu.be/, /live/, /shorts/, /embed/, atau videoId 11 karakter polos.
+  // Terima link studio.youtube.com/video/{id}/livestreaming, youtube.com/watch?v=, youtu.be/, /live/, /shorts/, /embed/, atau videoId 11 karakter polos.
   function extractVideoId(line){
     var s = String(line || "").trim();
     if (!s) return null;
     var m = s.match(/[?&]v=([A-Za-z0-9_-]{11})/); if (m) return m[1];
     m = s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/); if (m) return m[1];
-    m = s.match(/\/(?:live|shorts|embed)\/([A-Za-z0-9_-]{11})/); if (m) return m[1];
+    m = s.match(/\/(?:video|live|shorts|embed)\/([A-Za-z0-9_-]{11})/); if (m) return m[1];
     m = s.match(/^([A-Za-z0-9_-]{11})$/); if (m) return m[1];
     return null;
   }
@@ -5654,7 +5757,7 @@
         '</td>' +
         '<td>' + statusHtml + '</td>' +
         '<td style="white-space:nowrap;">' +
-          '<a class="pin-btn" href="' + liveChatUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; Buka &amp; Pin</a>' +
+          '<a class="pin-btn" href="' + pinChatTargetUrl(r.videoId) + '" target="_blank" rel="noopener">&#128204; ' + (((el.pcAccessModeSelect && el.pcAccessModeSelect.value) === 'popout') ? 'Popout &amp; Pin' : 'Studio &amp; Pin') + '</a>' +
           '<button class="acc-remove" data-pc-rm="' + idx + '" title="Hapus baris">&times;</button>' +
         '</td>' +
       '</tr>';
@@ -5746,7 +5849,7 @@
     (objs || []).forEach(function(raw){
       var lower = {};
       Object.keys(raw).forEach(function(k){ lower[String(k || "").trim().toLowerCase()] = String(raw[k] == null ? "" : raw[k]).trim(); });
-      var vid = extractVideoId(lower.videoid) || extractVideoId(lower.video_id) || extractVideoId(lower.link_live_chat) || extractVideoId(lower.link_watch);
+      var vid = extractVideoId(lower.videoid) || extractVideoId(lower.video_id) || extractVideoId(lower.link_studio) || extractVideoId(lower.link_live_chat) || extractVideoId(lower.link_watch);
       if (!vid) return;
       var msg = lower.isi_chatt || lower.isi_chat || lower.chat || "";
       var title = lower.title || lower.judul || vid;
@@ -5924,7 +6027,8 @@
     var repeatCnt = pcGetRepeatCount();
     var delaySec = pcGetDelaySec();
     var skipPinned = el.pcSkipPinnedChk ? el.pcSkipPinnedChk.checked : true;
-    var py = buildAutoPin3xPython(items, repeatCnt, delaySec, skipPinned, defMsg);
+    var accessMode = (el.pcAccessModeSelect && el.pcAccessModeSelect.value) || "studio";
+    var py = buildAutoPin3xPython(items, repeatCnt, delaySec, skipPinned, defMsg, accessMode);
     var blob = new Blob([py], { type: "text/x-python;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -7144,6 +7248,19 @@
   if (el.pcSendApiBtn) el.pcSendApiBtn.addEventListener("click", runPinChatSend3xApi);
   if (el.pcStopBtn) el.pcStopBtn.addEventListener("click", function(){ if (pcRunning){ pcStopRequested = true; el.pcStopBtn.disabled = true; el.pcStopBtn.textContent = "Menghentikan..."; } });
   if (el.pcExportScriptBtn) el.pcExportScriptBtn.addEventListener("click", exportPinChatTabScript);
+  if (el.pcAccessModeSelect) el.pcAccessModeSelect.addEventListener("change", function(){
+    renderPinChatRows();
+    if (events.length) renderEventsTable();
+  });
+  if (el.pcCopyStudioLinksBtn) el.pcCopyStudioLinksBtn.addEventListener("click", function(){
+    if (el.pcVideoListInput && el.pcVideoListInput.value.trim()){
+      var m = pcParseManualLines();
+      if (m.items.length){ pcAddRowsUnique(m.items); el.pcVideoListInput.value = ""; pcUpdateManualCount(); }
+    }
+    var src = pcRows.length ? pcRows : doneRows(true);
+    if (!src.length){ showToast("Belum ada event untuk disalin link Studio-nya"); return; }
+    copyText(src.map(function(r){ return pinChatTargetUrl(r.videoId); }).join("\n"), src.length + " link Studio disalin");
+  });
   if (el.clearLogBtn3) el.clearLogBtn3.addEventListener("click", function(){ el.logBody3.innerHTML = ""; pcLogBuffer = []; });
   if (el.downloadLogBtn3) el.downloadLogBtn3.addEventListener("click", pcDownloadLog);
   el.buildPlaylistBtn.addEventListener("click", runPlaylistBuild);
